@@ -33,6 +33,7 @@ dependencies = [
     "pandas",
     "msoffcrypto-tool",
     "openpyxl",
+    "xlrd",
     "rich"
 ]
 
