@@ -38,6 +38,6 @@ def save_excel_file(
     df.to_excel(file_path)
 
 
-ORDER_DELIVERY_MAP_TEMPLATE_PATH = (
-    pathlib.Path(__file__).parent / "_order_delivery_map_template.xlsx"
+ORDER_DELIVERY_CONFIG_TEMPLATE_PATH = (
+    pathlib.Path(__file__).parent / "_order_delivery_config_template.xlsx"
 )

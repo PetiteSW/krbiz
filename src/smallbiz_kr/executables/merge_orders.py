@@ -3,29 +3,96 @@ import io
 import logging
 import pathlib
 import shutil
+from dataclasses import dataclass
 
 import msoffcrypto
 import pandas as pd
 import xlrd
 
-from .._resources import (
-    ORDER_DELIVERY_MAP_TEMPLATE_PATH as DEFAULT_ORDER_DELIVERY_MAP_TEMPLATE_PATH,
-)
+from .._resources import ORDER_DELIVERY_CONFIG_TEMPLATE_PATH
 from ..configurations import DEFAULT_DIR
 
-ORDER_DELIVERY_MAP_FILE_NAME = "order_delivery_map.xlsx"
-ORDER_DELIVERY_MAP_FILE_PATH = DEFAULT_DIR / ORDER_DELIVERY_MAP_FILE_NAME
+ORDER_DELIVERY_CONFIG_FILE_NAME = "order_delivery_config.xlsx"
+ORDER_DELIVERY_CONFIG_FILE_PATH = DEFAULT_DIR / ORDER_DELIVERY_CONFIG_TEMPLATE_PATH
+
+
+@dataclass
+class PlatformHeaderVariableMap:
+    """Platform header variable mapping."""
+
+    platform: str
+    header: int
+    variable_mapping: dict[str, str]
+
+
+@dataclass
+class DeliveryInfoSchema:
+    """Delivery information schema."""
+
+    delivery_agency: str
+    templates: pd.DataFrame
+
+    @classmethod
+    def from_excel(
+        cls, file_path: str | pathlib.Path, sheet_name: str
+    ) -> "DeliveryInfoSchema":
+        return cls(
+            delivery_agency=sheet_name,
+            templates=pd.read_excel(file_path, sheet_name=sheet_name, header=0).fillna(
+                ""
+            ),
+        )
+
+    def order_info_to_delivery_info(self, order_info: pd.DataFrame) -> pd.DataFrame:
+        new_row = self.templates.copy(deep=True)
+        for col in self.templates.columns:
+            rendered = self.templates[col].values[0]
+            for order_col in order_info.columns:
+                target = "{" + order_col + "}"
+                rendered.replace(target, order_info[order_col].values[0])
+
+            new_row.at[0, col] = rendered
+
+        return new_row
+
+
+@dataclass
+class VariableMappings:
+    """Variable mapping to delivery information headers from different platforms."""
+
+    platform_header_variable_maps: list[PlatformHeaderVariableMap]
+    delivery_info_headers: DeliveryInfoSchema
+
+    @classmethod
+    def from_excel(cls, file_path: str | pathlib.Path) -> "VariableMappings":
+        mapping_df = pd.read_excel(
+            file_path, sheet_name="variable_mapping", header=0
+        ).fillna("")
+
+        return cls(
+            platform_header_variable_maps=[
+                PlatformHeaderVariableMap(
+                    platform=row["Name"],
+                    header=row["Header Row"],
+                    variable_mapping={col: row[col] for col in mapping_df.columns[2:]},
+                )
+                for _, row in mapping_df.iterrows()
+            ],
+            delivery_info_headers=DeliveryInfoSchema.from_excel(
+                file_path, str(pd.ExcelFile(file_path).sheet_names[1])
+            ),
+        )
 
 
 def reset_order_delivery_map() -> None:
-    shutil.copy(DEFAULT_ORDER_DELIVERY_MAP_TEMPLATE_PATH, ORDER_DELIVERY_MAP_FILE_PATH)
+    shutil.copy(ORDER_DELIVERY_CONFIG_TEMPLATE_PATH, ORDER_DELIVERY_CONFIG_FILE_PATH)
 
 
-def load_order_delivery_map() -> pd.DataFrame:
-    if not ORDER_DELIVERY_MAP_FILE_PATH.exists():
+def get_order_delivery_config_path() -> pathlib.Path:
+    if not ORDER_DELIVERY_CONFIG_FILE_PATH.exists():
         reset_order_delivery_map()
 
-    return pd.read_excel(ORDER_DELIVERY_MAP_FILE_PATH, header=0).fillna("")
+    return ORDER_DELIVERY_CONFIG_FILE_PATH
 
 
 def _build_default_download_dir() -> pathlib.Path:
@@ -84,27 +151,32 @@ def load_excel_file(
             return pd.read_excel(decrypted, header=header_row).fillna("")
 
 
-def match_column_names(df: pd.DataFrame, mappings: pd.DataFrame) -> bool:
-    for mapping_name in mappings.columns[2:]:  # From here
-        if (cand := mappings[mapping_name].values[0]) and (cand not in df.columns):
+def match_column_names(df: pd.DataFrame, mappings: dict[str, str]) -> bool:
+    for platform_name in mappings.values():
+        if platform_name and platform_name not in df.columns:
             return False
     return True
 
 
-def _collect_relevant_columns(df: pd.DataFrame, mappings: pd.DataFrame) -> pd.DataFrame:
-    columns = [
-        df[target]
-        for mapping_name in mappings.columns[2:]
-        if (target := mappings[mapping_name].values[0])
-    ]
+def _reverse_mapping(mapping: dict[str, str]) -> dict[str, str]:
+    return {v: k for k, v in mapping.items()}
+
+
+def _collect_relevant_columns(
+    df: pd.DataFrame, mappings: PlatformHeaderVariableMap
+) -> pd.DataFrame:
+    columns = [df[target] for target in mappings.variable_mapping.values() if target]
     relevants = pd.concat(columns, axis=1)
     return relevants.rename(
-        {mappings[col].values[0]: col for col in mappings.columns[2:]}, axis=1
+        _reverse_mapping(mappings.variable_mapping),
+        axis=1,
     )
 
 
 def file_to_dataframe(
-    file_path: str | pathlib.Path, mappings: pd.DataFrame, logger: logging.Logger
+    file_path: str | pathlib.Path,
+    mappings: list[PlatformHeaderVariableMap],
+    logger: logging.Logger,
 ) -> pd.DataFrame | None:
     try:
         pd.read_excel(file_path)
@@ -120,14 +192,12 @@ def file_to_dataframe(
         password = None
 
     # Iterate throw rows
-    for i_row in range(len(mappings)):
-        cur_mapping_df = mappings.iloc[[i_row]]
-        header_row = cur_mapping_df["Header Row"].values[0]
-        df = load_excel_file(file_path, header_row - 1, password)
-        if not match_column_names(df, cur_mapping_df):
+    for mapping in mappings:
+        df = load_excel_file(file_path, mapping.header - 1, password)
+        if not match_column_names(df, mapping.variable_mapping):
             continue
-        logger.info("Matched platform: %s", cur_mapping_df["Name"].values[0])
-        return _collect_relevant_columns(df, cur_mapping_df)
+        logger.info("Matched platform: %s", mapping.platform)
+        return _collect_relevant_columns(df, mapping)
 
     return None
 
@@ -141,28 +211,34 @@ def main():
 
     logger.info(
         "Parsing order-delivery column mapping from ... %s",
-        ORDER_DELIVERY_MAP_FILE_PATH,
+        ORDER_DELIVERY_CONFIG_FILE_PATH,
     )
-    logger.info("Column mapping: \n%s", (mappings := load_order_delivery_map()))
+    variable_mappings = VariableMappings.from_excel(get_order_delivery_config_path())
+    logger.info("Processing files using variable mappings: \n%s", variable_mappings)
+
     logger.info("Collecting order files from: %s ...", args.input_dir)
     order_files = collect_files(args.input_dir)
-    logger.info("Found %d order files.", len(order_files))
-    logger.info("%s", [file.name for file in order_files])
-    logger.info("Processing orders %s...", order_files)
+    order_file_names = [file.name for file in order_files]
+    logger.info("Found %d order files. %s", len(order_files), order_file_names)
+
     merged_df = None
+    logger.info("Processing orders %s...", order_files)
     for order_file in order_files:
         logger.info("Loading %s ...", order_file)
-        if (df := file_to_dataframe(order_file, mappings, logger)) is None:
+        df = file_to_dataframe(
+            order_file, variable_mappings.platform_header_variable_maps, logger
+        )
+        if df is None:
             logger.error(
                 "Failed to load %s. Please check the column names.", order_file
             )
             continue
-        logger.info("Total orders: %s", df.columns)
+
+        logger.info("%s orders found in %s : ", len(df), order_file)
         if merged_df is None:
             merged_df = df
         else:
             merged_df = pd.concat([merged_df, df], ignore_index=True)
 
-        logger.info("Total orders: %s", merged_df)
-
+    logger.info("Total orders: %s", merged_df)
     logger.info("Merging orders to: %s ...", args.output)
