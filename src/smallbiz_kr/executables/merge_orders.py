@@ -25,6 +25,16 @@ class PlatformHeaderVariableMap:
     variable_mapping: dict[str, str]
 
 
+def _replace_single_variable(text: str, variable: str, value: str) -> str:
+    return text.replace("{" + variable + "}", value)
+
+
+def _render_variable(text: str, variable_mapping: dict[str, str]) -> str:
+    for variable, value in variable_mapping.items():
+        text = _replace_single_variable(text, variable, value)
+    return text
+
+
 @dataclass
 class DeliveryInfoSchema:
     """Delivery information schema."""
@@ -44,16 +54,20 @@ class DeliveryInfoSchema:
         )
 
     def order_info_to_delivery_info(self, order_info: pd.DataFrame) -> pd.DataFrame:
-        new_row = self.templates.copy(deep=True)
-        for col in self.templates.columns:
-            rendered = self.templates[col].values[0]
-            for order_col in order_info.columns:
-                target = "{" + order_col + "}"
-                rendered.replace(target, order_info[order_col].values[0])
+        new_df = pd.concat(
+            [self.templates.copy(deep=True)] * len(order_info), ignore_index=True
+        )
+        for i_new_df_row in range(len(new_df)):
+            variable_mapping = {
+                col: str(order_info.at[i_new_df_row, col]) for col in order_info.columns
+            }
+            for new_df_col in new_df.columns:
+                new_df.at[i_new_df_row, new_df_col] = _render_variable(
+                    new_df.at[i_new_df_row, new_df_col],
+                    variable_mapping,
+                )
 
-            new_row.at[0, col] = rendered
-
-        return new_row
+        return new_df
 
 
 @dataclass
@@ -62,6 +76,16 @@ class VariableMappings:
 
     platform_header_variable_maps: list[PlatformHeaderVariableMap]
     delivery_info_headers: DeliveryInfoSchema
+
+    @property
+    def platform_header_variables(self) -> tuple[str, ...]:
+        from functools import reduce
+
+        key_set_list = [
+            set(mapping.variable_mapping.keys())
+            for mapping in self.platform_header_variable_maps
+        ]
+        return tuple(reduce(lambda x, y: x.union(y), key_set_list))
 
     @classmethod
     def from_excel(cls, file_path: str | pathlib.Path) -> "VariableMappings":
@@ -178,6 +202,8 @@ def file_to_dataframe(
     mappings: list[PlatformHeaderVariableMap],
     logger: logging.Logger,
 ) -> pd.DataFrame | None:
+    logger.info("Loading %s ...", file_path)
+
     try:
         pd.read_excel(file_path)
     except xlrd.biffh.XLRDError:
@@ -199,7 +225,46 @@ def file_to_dataframe(
         logger.info("Matched platform: %s", mapping.platform)
         return _collect_relevant_columns(df, mapping)
 
+    logger.error("Failed to load %s. Please check the column names.", file_path)
     return None
+
+
+def merge_orders(
+    order_files: list[pathlib.Path],
+    variable_mappings: VariableMappings,
+    logger: logging.Logger,
+) -> pd.DataFrame:
+    order_dfs = [
+        df
+        for order_file in order_files
+        if (
+            df := file_to_dataframe(
+                order_file, variable_mappings.platform_header_variable_maps, logger
+            )
+        )
+        is not None
+    ]
+    return pd.concat(order_dfs, ignore_index=True)
+
+
+def _adjust_column_width(sheet, ref_df: pd.DataFrame) -> None:
+    for i_col, col in enumerate(ref_df.columns):
+        max_length = max(
+            int(ref_df[col].astype(str).map(len).max()),
+            len(col),
+        )
+        sheet.set_column(i_col, i_col, min(max_length*2 + 1, 50))
+
+
+def export_excel(
+    df: pd.DataFrame, output_file_path: pathlib.Path, pretty: bool = True
+) -> None:
+    with pd.ExcelWriter(output_file_path, engine="xlsxwriter") as writer:
+        df.to_excel(excel_writer=writer, index=False)
+        if pretty:
+            for sheet in writer.sheets.values():
+                # sheet.autofit()
+                _adjust_column_width(sheet, df)
 
 
 def main():
@@ -221,24 +286,15 @@ def main():
     order_file_names = [file.name for file in order_files]
     logger.info("Found %d order files. %s", len(order_files), order_file_names)
 
-    merged_df = None
     logger.info("Processing orders %s...", order_files)
-    for order_file in order_files:
-        logger.info("Loading %s ...", order_file)
-        df = file_to_dataframe(
-            order_file, variable_mappings.platform_header_variable_maps, logger
-        )
-        if df is None:
-            logger.error(
-                "Failed to load %s. Please check the column names.", order_file
-            )
-            continue
+    merged_df = merge_orders(order_files, variable_mappings, logger)
 
-        logger.info("%s orders found in %s : ", len(df), order_file)
-        if merged_df is None:
-            merged_df = df
-        else:
-            merged_df = pd.concat([merged_df, df], ignore_index=True)
+    logger.debug("Merged orders: %s", merged_df)
+    rendered_orders = (
+        variable_mappings.delivery_info_headers.order_info_to_delivery_info(merged_df)
+    )
 
-    logger.info("Total orders: %s", merged_df)
-    logger.info("Merging orders to: %s ...", args.output)
+    logger.debug("Total orders: %s", rendered_orders)
+    logger.info("Exporting delivery information to: %s ...", args.output)
+    export_excel(rendered_orders, args.output)
+    logger.info("Exporting done. Check the file: %s", args.output)
