@@ -6,7 +6,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "smallbiz"
+name = "krbiz"
 description = "Tools for small business owners"
 authors = [{ name = "Sunyoung Yoo" }]
 license = { file = "LICENSE" }
@@ -41,12 +41,12 @@ dependencies = [
 dynamic = ["version"]
 
 [project.urls]
-"Bug Tracker" = "https://github.com/YooSunyoung/smallbiz/issues"
-# "Documentation" = "https://YooSunyoung.github.io/smallbiz"
-"Source" = "https://github.com/yoosunyoung/smallbiz"
+"Bug Tracker" = "https://github.com/YooSunyoung/krbiz/issues"
+# "Documentation" = "https://YooSunyoung.github.io/krbiz"
+"Source" = "https://github.com/yoosunyoung/krbiz"
 
 [project.scripts]
-merge-orders = "smallbiz_kr.executables.merge_orders:main"
+merge-orders = "krbiz.executables.merge_orders:main"
 
 [tool.setuptools_scm]
 

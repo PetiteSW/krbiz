@@ -10,10 +10,9 @@ import pandas as pd
 import xlrd
 
 from .._resources import ORDER_DELIVERY_CONFIG_TEMPLATE_PATH
-from ..configurations import DEFAULT_DIR
 
 ORDER_DELIVERY_CONFIG_FILE_NAME = "order_delivery_config.xlsx"
-ORDER_DELIVERY_CONFIG_FILE_PATH = DEFAULT_DIR / ORDER_DELIVERY_CONFIG_TEMPLATE_PATH
+ORDER_DELIVERY_CONFIG_FILE_PATH = ORDER_DELIVERY_CONFIG_TEMPLATE_PATH
 
 
 @dataclass
@@ -108,14 +107,7 @@ class VariableMappings:
         )
 
 
-def reset_order_delivery_map() -> None:
-    shutil.copy(ORDER_DELIVERY_CONFIG_TEMPLATE_PATH, ORDER_DELIVERY_CONFIG_FILE_PATH)
-
-
 def get_order_delivery_config_path() -> pathlib.Path:
-    if not ORDER_DELIVERY_CONFIG_FILE_PATH.exists():
-        reset_order_delivery_map()
-
     return ORDER_DELIVERY_CONFIG_FILE_PATH
 
 
@@ -244,7 +236,7 @@ def merge_orders(
         )
         is not None
     ]
-    return pd.concat(order_dfs, ignore_index=True)
+    return pd.concat(order_dfs, ignore_index=True).fillna("")
 
 
 def _adjust_column_width(sheet, ref_df: pd.DataFrame) -> None:
@@ -263,7 +255,6 @@ def export_excel(
         df.to_excel(excel_writer=writer, index=False)
         if pretty:
             for sheet in writer.sheets.values():
-                # sheet.autofit()
                 _adjust_column_width(sheet, df)
 
 
