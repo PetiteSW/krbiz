@@ -13,6 +13,7 @@
 merge-orders --input-dir PATH_TO_THE_FILES
 ```
 ``PATH_TO_THE_FILES`` 를 주문내역 파일이 들어있는 폴더의 위치로 바꾸어주세요.
+**해당 폴더에 들어있는 파일 중 오늘 날짜의 파일만 불러옵니다.**
 
 해당 명령어는 ``input-dir`` 에 들어있는 모든 엑셀 파일들 중 설정파일(configuration)에서 매칭되는 모든 파일들을 찾아서 병합한 후 ``merged.xlsx`` 에 배송 플랫폼 양식에 맞게 저장합니다.
 
@@ -66,3 +67,9 @@ conda activate krbiz
 git pull origin main
 pip install -e .
 ```
+
+TODO:
+- [ ] 11번가
+- [ ] G 마켓
+- [ ] 와디즈
+- [ ] 카카오

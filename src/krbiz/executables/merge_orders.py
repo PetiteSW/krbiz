@@ -1,8 +1,9 @@
 import argparse
+import datetime
 import io
 import logging
+import os
 import pathlib
-import shutil
 from dataclasses import dataclass
 
 import msoffcrypto
@@ -95,7 +96,7 @@ class VariableMappings:
         return cls(
             platform_header_variable_maps=[
                 PlatformHeaderVariableMap(
-                    platform=row["Name"],
+                    platform=row["Platform Name"],
                     header=row["Header Row"],
                     variable_mapping={col: row[col] for col in mapping_df.columns[2:]},
                 )
@@ -143,13 +144,26 @@ def build_argparser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--output", help="Output file path.", type=str, default="merged.xlsx"
     )
+    parser.add_argument(
+        "--all",
+        help="Merge all the files in the input directory. "
+        "If not, it will only merge files that were created today.",
+        action="store_true",
+        default=False,
+    )
     return parser
 
 
-def collect_files(input_dir: str | pathlib.Path) -> list[pathlib.Path]:
+def collect_files(
+    input_dir: str | pathlib.Path, only_today: bool = True
+) -> list[pathlib.Path]:
     dir_path = pathlib.Path(input_dir)
     cands = [*dir_path.glob("*.xlsx"), *dir_path.glob("*.xls")]
-    return [file for file in cands if not file.name.startswith("~")]
+    if not only_today:
+        return [file for file in cands if not file.name.startswith("~")]
+    else:
+        today = datetime.datetime.today()  # noqa: DTZ002
+        return [file for file in cands if os.path.getmtime(file) > today.timestamp()]
 
 
 def load_excel_file(
@@ -215,8 +229,10 @@ def file_to_dataframe(
         if not match_column_names(df, mapping.variable_mapping):
             continue
         logger.info("Matched platform: %s", mapping.platform)
-        return _collect_relevant_columns(df, mapping)
-
+        loaded_df = _collect_relevant_columns(df, mapping)
+        # Add platform column
+        loaded_df["PlatformName"] = mapping.platform
+        return loaded_df
     logger.error("Failed to load %s. Please check the column names.", file_path)
     return None
 
@@ -245,7 +261,7 @@ def _adjust_column_width(sheet, ref_df: pd.DataFrame) -> None:
             int(ref_df[col].astype(str).map(len).max()),
             len(col),
         )
-        sheet.set_column(i_col, i_col, min(max_length*2 + 1, 50))
+        sheet.set_column(i_col, i_col, min(max_length * 2 + 1, 50))
 
 
 def export_excel(
@@ -273,7 +289,11 @@ def main():
     logger.info("Processing files using variable mappings: \n%s", variable_mappings)
 
     logger.info("Collecting order files from: %s ...", args.input_dir)
-    order_files = collect_files(args.input_dir)
+    if args.all:
+        order_files = collect_files(args.input_dir, only_today=False)
+    else:
+        order_files = collect_files(args.input_dir, only_today=True)
+
     order_file_names = [file.name for file in order_files]
     logger.info("Found %d order files. %s", len(order_files), order_file_names)
 
