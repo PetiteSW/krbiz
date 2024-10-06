@@ -197,6 +197,9 @@ def _collect_relevant_columns(
 ) -> pd.DataFrame:
     columns = [df[target] for target in mappings.variable_mapping.values() if target]
     relevants = pd.concat(columns, axis=1)
+    # TODO: We have to assign columns one by one since pd.concat does not allow
+    # duplicating values,
+    # in case we want to use same column names in the variable mapping.
     return relevants.rename(
         _reverse_mapping(mappings.variable_mapping),
         axis=1,
@@ -232,7 +235,7 @@ def file_to_dataframe(
         loaded_df = _collect_relevant_columns(df, mapping)
         # Add platform column
         loaded_df["PlatformName"] = mapping.platform
-        return loaded_df
+        return loaded_df.dropna(how='all')
     logger.error("Failed to load %s. Please check the column names.", file_path)
     return None
 
