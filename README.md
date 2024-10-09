@@ -67,9 +67,3 @@ conda activate krbiz
 git pull origin main
 pip install -e .
 ```
-
-TODO:
-- [ ] 11번가
-- [ ] G 마켓
-- [ ] 와디즈
-- [ ] 카카오
