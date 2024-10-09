@@ -206,11 +206,11 @@ def _collect_relevant_columns(
     )
 
 
-def file_to_dataframe(
+def file_to_raw_dataframe(
     file_path: str | pathlib.Path,
     mappings: list[PlatformHeaderVariableMap],
     logger: logging.Logger,
-) -> pd.DataFrame | None:
+) -> tuple[PlatformHeaderVariableMap, pd.DataFrame] | None:
     logger.info("Loading %s ...", file_path)
 
     try:
@@ -231,12 +231,25 @@ def file_to_dataframe(
         df = load_excel_file(file_path, mapping.header - 1, password)
         if not match_column_names(df, mapping.variable_mapping):
             continue
-        logger.info("Matched platform: %s", mapping.platform)
+        return mapping, df
+    logger.error("Failed to load %s. Please check the column names.", file_path)
+    return None
+
+
+def file_to_dataframe(
+    file_path: str | pathlib.Path,
+    mappings: list[PlatformHeaderVariableMap],
+    logger: logging.Logger,
+) -> pd.DataFrame | None:
+    results = file_to_raw_dataframe(
+        file_path=file_path, mappings=mappings, logger=logger
+    )
+    if results is not None:
+        mapping, df = results
         loaded_df = _collect_relevant_columns(df, mapping)
         # Add platform column
         loaded_df["PlatformName"] = mapping.platform
         return loaded_df.dropna(how='all')
-    logger.error("Failed to load %s. Please check the column names.", file_path)
     return None
 
 

@@ -47,6 +47,7 @@ dynamic = ["version"]
 
 [project.scripts]
 merge-orders = "krbiz.executables.merge_orders:main"
+split-deliveries = "krbiz.executables.split_delivery:main"
 
 [tool.setuptools_scm]
 
