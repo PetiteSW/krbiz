@@ -1,0 +1,18 @@
+name = "Calm Resonance"
+packages = [
+    "pandas",
+    "pyyaml",
+    "msoffcrypto-tool",
+    "openpyxl",
+    "xlrd",
+    "xlsxwriter",
+    "rich",
+    "pygments"
+]
+
+[files]
+"_logging.py" = "_logging.py"
+"_configuration.py" = "_configuration.py"
+"merge_orders.py" = "merge_orders.py"
+"_resources/__init__.py" = "_resources/__init__.py"
+"_resources/_order_delivery_config_template.xlsx" = "_resources/_order_delivery_config_template.xlsx"
