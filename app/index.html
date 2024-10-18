@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>KR BIZ TOOL</title>
+    <!-- Recommended meta tags -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+    <!-- PyScript CSS -->
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.10.1/core.css">
+
+    <!-- This script tag bootstraps PyScript -->
+    <script type="module" src="https://pyscript.net/releases/2024.10.1/core.js"></script>
+
+    <link rel="stylesheet" href="../styles/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <div class="section-container">
+            <h1>서로 다른 판매경로 주문 내역 합치기</h1>
+            <div class="module-container" id="order-file-upload-box">
+                <h2 class="file-upload-module-text">주문 내역 파일 올리기</h2>
+                <label class="button" for="order-file-upload">눌러서 파일 찾기 ...</label>
+                <input type="file" id="order-file-upload" multiple style="display:none"> <br>
+                <details open>
+                    <summary font-size="62">주문 내역 파일 목록</summary>
+                    <div id="order-file-list-table-container"></div>
+                </details>
+            </div>
+        </div>
+    </div>
+    <script type="py" src="./main.py" config="./pyscript.toml" terminal></script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+@font-face {
+    font-family: "DungGeunMo";
+    src: url("DungGeunMo.ttf");
+}
+body {
+    font-family: "DungGeunMo";
+}
+table {
+    width:100%;
+    margin-top: 5px;
+}
+table, td{
+    border: solid;
+    border-collapse: collapse;
+}
+tr.table-header {
+    text-align: center;
+}
+.menu-box {
+    display: grid;
+    align-items: center;
+}
+.menu {
+    border: solid;
+    border-width: 10px;
+    margin: 5px;
+    margin-left: 10%;
+    margin-right: 10%;
+    font-family: "DungGeunMo";
+    font-size: 64px;
+    font-style: normal;
+    text-decoration: none;
+    text-align: center;
+    align-self: center;   
+}
+.menu:hover {
+    background-color: grey;
+}
+.menu:hover::before {
+    content: ">";
+    font-size: smaller;
+}
+.menu:hover::after {
+    content: "<";
+    font-size: smaller;
+}
+.menu:visited {
+    color: black;
+}
+
+.app-container {
+    margin-left: 1%;
+    margin-right: 1%;
+    width: 68%;
+}
+
+.section-container {
+    display: grid;
+    align-items: center;
+}
+
+.section-container h1 {
+    text-align: center;
+    text-decoration: underline;
+}
+.section-container h2 {
+    margin: 10px;
+}
+.module-container {
+    border: solid thick;
+    border-style: double;
+    display: grid;
+    padding: 10px;
+}
+
+.file-upload-module-text::after {
+    content: " *여기에 올리시는 파일은 브라우저 내에만 저장되고 서버로는 전송되지 않습니다.";
+    font-size: small;
+}
+
+.button {
+    text-align: center;
+    font-size: 32px;
+    padding: 20px;
+    border: thick solid lightgrey;
+    border-style: outset;
+    border-radius: 3px;
+    margin-left: 20%;
+    margin-right: 20%;
+}
+.button:hover {
+    background-color: grey;
+    border-color: grey;
+    border-style: inset;
+}
+.button:hover::before {
+    content: ">";
+    font-size: smaller;
+}
+
+.button:hover::after {
+    content: "<";
+    font-size: smaller;
+}
