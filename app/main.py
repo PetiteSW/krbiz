@@ -121,9 +121,30 @@ async def upload_order_file(e):
     refresh_table_from_order_files()
 
 
+def upload_new_order_variable_settings(e):
+    window.console.log(e.currentTarget)
+
+
+def download_current_order_variable_settings(e):
+    window.console.log(e.currentTarget)
+
+
+def reset_order_variable_settings(e):
+    window.console.log(e.currentTarget)
+
+
 if __name__ == "__main__":
     # Initialize Order list table.
     initialize_order_list_table()
     document.getElementById("order-file-upload").addEventListener(
         "change", create_proxy(upload_order_file)
+    )
+    document.getElementById("new-order-variables-button").addEventListener(
+        "click", create_proxy(upload_new_order_variable_settings)
+    )
+    document.getElementById("download-order-variables-button").addEventListener(
+        "click", create_proxy(download_current_order_variable_settings)
+    )
+    document.getElementById("reset-order-variables-button").addEventListener(
+        "click", create_proxy(reset_order_variable_settings)
     )
