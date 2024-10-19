@@ -1,5 +1,7 @@
 import io
 
+import pandas as pd
+import xlrd
 from _templates import file_item_row_template, file_list_table_template
 from pyscript import document, window
 from pyscript.ffi import create_proxy
@@ -59,13 +61,46 @@ def delete_file(e) -> None:
     window.console.log(f"Left order files: \n{left_files}")
 
 
+def _is_file_encrypted(file_name: str) -> bool:
+    file_bytes = _order_files.get(file_name, None)
+    if file_bytes is None:
+        window.console.log(f"{file_name} not founded to check if it is encrypted.")
+        return False
+    try:
+        pd.read_excel(file_bytes)
+        return False
+    except xlrd.biffh.XLRDError:
+        return True
+
+
+def _make_password_id(file_name: str) -> str:
+    return f"{file_name}-password"
+
+
+def _make_password_input(file_name: str) -> str:
+    return f"<input type='password' id='{_make_password_id(file_name)}'>"
+
+
+ORDER_FILE_VALIDITY_CLASS_MAP = {
+    True: "valid-order-file",
+    False: "invalid-order-file",
+    None: "uncertain-order-file",
+}
+
+
+def get_file_item_row(file_name: str) -> str:
+    encrypted = _is_file_encrypted(file_name)
+    return file_item_row_template.render(
+        validity_class=ORDER_FILE_VALIDITY_CLASS_MAP[None],
+        file_name=file_name,
+        delete_button=_make_delete_button(file_name),
+        encrypted="Y" if encrypted else "N",
+        password_input="-" if not encrypted else _make_password_input(file_name)
+    )
+
+
 def refresh_table_from_order_files() -> None:
-    new_rows = [
-        file_item_row_template.render(
-            file_name=file_name, delete_button=_make_delete_button(file_name)
-        )
-        for file_name in _order_files
-    ]
+    new_rows = [get_file_item_row(file_name) for file_name in _order_files]
     clear_order_table_container()
     table = document.createElement('table')
     table.id = "order-file-list-table"

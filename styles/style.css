@@ -119,3 +119,21 @@ button > img {
     background-color: grey;
     border-color: black;
 }
+
+.order-file-row > .order-file-validity {
+    text-align: center;
+}
+
+.uncertain-order-file > .order-file-validity::before {
+    content: '?';
+}
+.valid-order-file > .order-file-validity::before {
+    content: 'O';
+}
+.invalid-order-file > .order-file-validity::before {
+    content: 'X';
+    
+}
+.invalid-order-file {
+    background-color: lightpink;
+}
