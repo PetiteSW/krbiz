@@ -102,3 +102,20 @@ tr.table-header {
     content: "<";
     font-size: smaller;
 }
+
+button > img {
+    height: 1.5em;
+    padding: 0;
+    margin: 0;
+}
+
+.delete-button {
+    border-style: outset;
+    background-color: white;
+    border-color: grey;
+}
+.delete-button:hover {
+    border-style: inset;
+    background-color: grey;
+    border-color: black;
+}
