@@ -4,9 +4,13 @@ import pathlib
 from dataclasses import dataclass
 
 import pandas as pd
-from excel_helpers import export_excel
-from js import URL, File, Uint8Array
+from excel_helpers import export_excel, load_excel
+from js import URL, File, Uint8Array, alert
+from order_file_io import get_bytes_from_file
 from pyscript import document, window
+
+PLATFORM_NAME_COLUMN_NAME = "Platform Name"
+HEADER_ROW_COLUMN_NAME = "Header Row"
 
 
 @dataclass
@@ -29,6 +33,17 @@ _ORDER_VARIABLE_SETTING_LOCAL_STORAGE_KEY = "ORDER-HEADER-VARIABLES"
 """DO NOT CHANGE this without supporting background compatibility."""
 
 
+def _update_order_variables_in_local_storage(new_df: pd.DataFrame) -> None:
+    """Update the order variable in local storage."""
+    local_storage = window.localStorage
+    if local_storage.getItem(_ORDER_VARIABLE_SETTING_LOCAL_STORAGE_KEY) is not None:
+        window.console.log("Overwriting the existing order header variable settings.")
+    order_variables_str = json.dumps(new_df.to_dict(), ensure_ascii=False)
+    local_storage.setItem(
+        _ORDER_VARIABLE_SETTING_LOCAL_STORAGE_KEY, order_variables_str
+    )
+
+
 def _initialize_order_variables_in_local_storage() -> None:
     """Initialize local storage with order variables.
 
@@ -37,13 +52,7 @@ def _initialize_order_variables_in_local_storage() -> None:
     """
     window.console.log("Initializing order variables from the default file.")
     order_variables = pd.read_excel(DEFAULT_ORDER_VARIABLE_CONFIG_FILE_PATH, header=0)
-    local_storage = window.localStorage
-    if local_storage.getItem(_ORDER_VARIABLE_SETTING_LOCAL_STORAGE_KEY) is not None:
-        window.console.log("Overwriting the existing order header variable settings.")
-    order_variables_str = json.dumps(order_variables.to_dict(), ensure_ascii=False)
-    local_storage.setItem(
-        _ORDER_VARIABLE_SETTING_LOCAL_STORAGE_KEY, order_variables_str
-    )
+    _update_order_variables_in_local_storage(order_variables)
 
 
 @dataclass
@@ -69,8 +78,8 @@ class VariableMappings:
         return cls(
             platform_header_variable_maps=[
                 PlatformHeaderVariableMap(
-                    platform=row["Platform Name"],
-                    header=row["Header Row"],
+                    platform=row[PLATFORM_NAME_COLUMN_NAME],
+                    header=row[HEADER_ROW_COLUMN_NAME],
                     variable_mapping={col: row[col] for col in mapping_df.columns[2:]},
                 )
                 for _, row in mapping_df.iterrows()
@@ -135,8 +144,54 @@ def refresh_order_variable_preview() -> None:
     preview_box.appendChild(table)
 
 
-def upload_new_order_variable_settings(e):
-    window.console.log(e.currentTarget)
+def _has_new_order_variable_setting_mandatory_columns(df: pd.DataFrame) -> bool:
+    return (
+        PLATFORM_NAME_COLUMN_NAME in df.columns
+        and HEADER_ROW_COLUMN_NAME in df.columns
+    )
+
+
+def _is_new_order_variable_setting_header_row_integers(df: pd.DataFrame) -> bool:
+    try:
+        for item in df.get(HEADER_ROW_COLUMN_NAME, []):
+            int(item)
+        return True
+    except ValueError:
+        return False
+
+
+async def upload_new_order_variable_settings(e) -> None:
+    if len(files := list(e.target.files)) == 0:
+        window.console.log("No file selected.")
+        return
+    uploaded_file = next(iter(files))  # New setting file should be only 1.
+    window.console.log(f"New setting file uploaded: {uploaded_file.name}")
+    bytes = await get_bytes_from_file(uploaded_file)
+    df = load_excel(bytes)
+    window.console.log(df.to_string())
+    err_msg = ""
+    if not _has_new_order_variable_setting_mandatory_columns(df):
+        err_msg = f"필수 항목인 '{PLATFORM_NAME_COLUMN_NAME}' 과 "
+        err_msg += f"'{HEADER_ROW_COLUMN_NAME}'를 찾을 수 없습니다.\n"
+        err_msg += "파일을 확인 후 다시 등록해주세요.\n\n"
+    if not _is_new_order_variable_setting_header_row_integers(df):
+        err_msg += f"{HEADER_ROW_COLUMN_NAME} 행은 모두 숫자여야 합니다.\n"
+        err_msg += "해당 행은 각 플랫폼 별 파일의 행이름이"
+        err_msg += "몇 번 째 열에 위치하는지를 의미합니다.\n"
+        err_msg += "파일을 확인 후 다시 시도해주세요.\n\n"
+
+    if len(err_msg) > 0:
+        # Alert is done once here with all error messages
+        # to give all feedbacks at once to the user.
+        alert(err_msg)
+        return
+    # If the file is valid.
+    # Save the data frame to the local storage.
+    _update_order_variables_in_local_storage(new_df=df)
+    # Refresh the settings preview.
+    refresh_order_variable_preview()
+    # Refresh the merged file preview.
+    # Refresh the converted file preview.
 
 
 def download_current_order_variable_settings(e):

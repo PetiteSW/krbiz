@@ -19,9 +19,9 @@ if __name__ == "__main__":
     refresh_order_variable_preview()
     # Order file upload button event listener
     when("change", document.getElementById("order-file-upload"))(upload_order_file)
-    # Order related setting buttons event listeners
+    # Order related setting input/buttons event listeners
     new_order_setting_button = document.getElementById("new-order-variables-button")
-    when("click", new_order_setting_button)(upload_new_order_variable_settings)
+    when("change", new_order_setting_button)(upload_new_order_variable_settings)
     download_setting_button = document.getElementById("download-order-variables-button")
     when("click", download_setting_button)(download_current_order_variable_settings)
     reset_order_button = document.getElementById("reset-order-variables-button")

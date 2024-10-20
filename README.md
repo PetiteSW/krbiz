@@ -67,3 +67,23 @@ conda activate krbiz
 git pull origin main
 pip install -e .
 ```
+
+## Developer's Guide.
+### Release
+
+I didn't have any resources to automate the UI tests for now so instead
+I have been doing this check manually before releasing.
+#### Functionality check-list before releases.
+- [ ] Order variable settings.
+    - [ ] ``tests/order-variable-settings/missing_*.xlsx`` files should alert about
+        the wrong configuration and abort the uploading.
+        **These files should be warned about missing headers.**
+    - [ ] ``tests/order-variable-settings/wrong_*.xlsx`` files should alert about
+        the wrong configuration and abort the uploading.
+        **These files should be warned about wrong dtype of mandatory columns**
+    - [ ] ``tests/order-variable-settings/additional*.xlsx`` files should change    the settings accordingly.
+        - [ ] Preview should be updated
+        - [ ] ``현재 설정파일 내려받기`` file is same as the latest one uploaded.
+    - [ ] ``초기화`` button should return the settings to the default
+        - [ ] Preview should be updated
+        - [ ] ``현재 설정파일 내려받기`` file is same as the default file.

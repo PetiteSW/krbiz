@@ -4,6 +4,10 @@ import pathlib
 import pandas as pd
 
 
+def load_excel(file_path: pathlib.Path | io.BytesIO, header_row: int = 0) -> pd.DataFrame:
+    return pd.read_excel(file_path, header=header_row, dtype=str).fillna("")
+
+
 def _adjust_column_width(sheet, ref_df: pd.DataFrame) -> None:
     for i_col, col in enumerate(ref_df.columns):
         max_length = max(
