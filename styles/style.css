@@ -153,3 +153,10 @@ button > img {
     border-color: black;
     border-style: inset;
 }
+
+.explaining-text {
+    font-size: 0.8em;
+}
+.explaining-text::before {
+    content: "*";
+}
