@@ -1,8 +1,14 @@
 import io
 
+import msoffcrypto
 import pandas as pd
 import xlrd
 from _templates import file_item_row_template, file_list_table_template
+from order_settings import (
+    find_matching_variable_map,
+    load_order_variables_from_local_storage,
+    PlatformHeaderVariableMap,
+)
 from pyscript import document, when, window
 
 # We are using ``when`` instead of ``create_proxy`` so that we don't have to handle
@@ -102,11 +108,33 @@ ORDER_FILE_VALIDITY_CLASS_MAP = {
 }
 
 
+def _get_order_numbers(
+    file_bytes: io.BytesIO, variable_map: PlatformHeaderVariableMap | None
+) -> str:
+    if variable_map is None:
+        return ""
+    else:
+        return str(len(pd.read_excel(file_bytes, header=variable_map.header)))
+
+
 def get_file_item_row(file_name: str) -> str:
-    encrypted = _is_file_encrypted(file_name)
+    variable_mappings = load_order_variables_from_local_storage()
+    if encrypted := _is_file_encrypted(file_name):
+        validity = None
+        num_orders = '?'
+        platform_name = '?'
+    else:
+        variable_map = find_matching_variable_map(
+            _order_files[file_name], variable_mappings.platform_header_variable_maps
+        )
+        validity = variable_map is not None
+        num_orders = _get_order_numbers(_order_files[file_name], variable_map)
+        platform_name = variable_map.platform if variable_map is not None else ''
     return file_item_row_template.render(
-        validity_class=ORDER_FILE_VALIDITY_CLASS_MAP[None],
+        validity_class=ORDER_FILE_VALIDITY_CLASS_MAP[validity],
         file_name=file_name,
+        platform_name=platform_name,
+        num_orders=num_orders,
         delete_button=_make_delete_button(file_name),
         encrypted="Y" if encrypted else "N",
         password_input="-" if not encrypted else _make_password_input(file_name),
@@ -133,3 +161,12 @@ async def upload_order_file(e):
     window.console.log("Files uploaded: " + ','.join(names))
     _order_files.update({f.name: await get_bytes_from_file(f) for f in file_list})
     refresh_table_from_order_files()
+
+
+def decrypt_bytes(file_name: str) -> bytes:
+    password_input = document.getElementById(_make_password_id(file_name))
+    file = msoffcrypto.OfficeFile(_order_files[file_name])
+    file.load_key(password=password_input.value)
+    decrypted = io.BytesIO()
+    file.decrypt(decrypted)
+    return decrypted

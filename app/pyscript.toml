@@ -17,6 +17,7 @@ packages = [
 "_templates/__init__.py" = "_templates/__init__.py"
 "_resources/default_krbiz_order_unified_row_names.xlsx" = "_resources/default_krbiz_order_unified_row_names.xlsx"
 "merge_order.py" = "merge_order.py"
+"order_settings.py" = "order_settings.py"
 "order_file_io.py" = "order_file_io.py"
 "excel_helpers.py" = "excel_helpers.py"
 "main.py" = "main.py"

@@ -74,6 +74,9 @@ pip install -e .
 I didn't have any resources to automate the UI tests for now so instead
 I have been doing this check manually before releasing.
 #### Functionality check-list before releases.
+- [ ] Order file upload.
+    - [ ] When a new order file is uploaded, it should check if it can be merged or not.
+
 - [ ] Order variable settings.
     - [ ] ``tests/order-variable-settings/missing_*.xlsx`` files should alert about
         the wrong configuration and abort the uploading.
@@ -87,3 +90,14 @@ I have been doing this check manually before releasing.
     - [ ] ``초기화`` button should return the settings to the default
         - [ ] Preview should be updated
         - [ ] ``현재 설정파일 내려받기`` file is same as the default file.
+
+- [ ] Header unification(translation)
+    - [ ] When the page is loaded/refreshed, it should show the preview
+          of the merged files. **Only the first rows of each file**
+    - [ ] When user upload a new order-file, it should show in the preview.
+
+TODO:
+- [ ] Merge file download button
+- [ ] Translated file download button
+- [ ] Skip preview of the encrypted file if password doesn't work
+- [ ] Validate the password as it is written
