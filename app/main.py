@@ -3,8 +3,11 @@ import io
 import pandas as pd
 import xlrd
 from _templates import file_item_row_template, file_list_table_template
-from pyscript import document, window
-from pyscript.ffi import create_proxy
+from pyscript import document, when, window
+
+# We are using ``when`` instead of ``create_proxy`` so that we don't have to handle
+# garbagae collections of proxies.
+# See https://docs.pyscript.net/2024.10.1/user-guide/ffi/#create_proxy for details.
 
 _order_files = {}  # Dictionary that carries uploaded files.
 
@@ -95,7 +98,7 @@ def get_file_item_row(file_name: str) -> str:
         file_name=file_name,
         delete_button=_make_delete_button(file_name),
         encrypted="Y" if encrypted else "N",
-        password_input="-" if not encrypted else _make_password_input(file_name)
+        password_input="-" if not encrypted else _make_password_input(file_name),
     )
 
 
@@ -110,7 +113,7 @@ def refresh_table_from_order_files() -> None:
     # Add event listener to the delete button
     for file_name in _order_files:
         button = document.getElementById(_make_button_id(file_name))
-        button.addEventListener("click", create_proxy(delete_file))
+        when("click", button)(delete_file)
 
 
 async def upload_order_file(e):
@@ -136,15 +139,12 @@ def reset_order_variable_settings(e):
 if __name__ == "__main__":
     # Initialize Order list table.
     initialize_order_list_table()
-    document.getElementById("order-file-upload").addEventListener(
-        "change", create_proxy(upload_order_file)
-    )
-    document.getElementById("new-order-variables-button").addEventListener(
-        "click", create_proxy(upload_new_order_variable_settings)
-    )
-    document.getElementById("download-order-variables-button").addEventListener(
-        "click", create_proxy(download_current_order_variable_settings)
-    )
-    document.getElementById("reset-order-variables-button").addEventListener(
-        "click", create_proxy(reset_order_variable_settings)
-    )
+    # Order file upload button event listener
+    when("change", document.getElementById("order-file-upload"))(upload_order_file)
+    # Order related setting buttons event listeners
+    new_order_setting_button = document.getElementById("new-order-variables-button")
+    when("click", new_order_setting_button)(upload_new_order_variable_settings)
+    download_setting_button = document.getElementById("download-order-variables-button")
+    when("click", download_setting_button)(download_current_order_variable_settings)
+    reset_order_button = document.getElementById("reset-order-variables-button")
+    when("click", reset_order_button)(reset_order_variable_settings)
