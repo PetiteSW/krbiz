@@ -1,6 +1,6 @@
 from merge_order import (
     download_current_order_variable_settings,
-    load_order_variables_from_local_storage,
+    refresh_order_variable_preview,
     reset_order_variable_settings,
     upload_new_order_variable_settings,
 )
@@ -16,7 +16,7 @@ if __name__ == "__main__":
     # Initialize Order list table.
     initialize_order_list_table()
     # Try Loading Order Variable Settings.
-    load_order_variables_from_local_storage()
+    refresh_order_variable_preview()
     # Order file upload button event listener
     when("change", document.getElementById("order-file-upload"))(upload_order_file)
     # Order related setting buttons event listeners

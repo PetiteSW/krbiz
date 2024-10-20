@@ -4,7 +4,6 @@ import pandas as pd
 import xlrd
 from _templates import file_item_row_template, file_list_table_template
 from pyscript import document, when, window
-import pathlib
 
 # We are using ``when`` instead of ``create_proxy`` so that we don't have to handle
 # garbagae collections of proxies.
