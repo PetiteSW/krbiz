@@ -9,7 +9,18 @@ from pyscript import document, when, window
 # garbagae collections of proxies.
 # See https://docs.pyscript.net/2024.10.1/user-guide/ffi/#create_proxy for details.
 
-_order_files = {}  # Dictionary that carries uploaded files.
+_order_files = {}  # Dictionary that carries uploaded files as bytes.
+# Reasons why files are stored as bytes here.
+# - Files carry personal information hence should not be saved in local storage
+#   or indexeddb or session storage.
+# - In-memory is also not the most secure way but it is not so much less secure than
+#   having the files in the file-system, which is inevitable for users.
+# - Virtual file system could also be an option but it is also just in-memory anyways.
+#   Dictionary is easier to use than the virtual file system and easier to clear.
+# Important aspects of using dictionary to carry files.
+# - The keys are name of the files so when a new file with a same name comes, it will
+#   overwrite the existing one, but that is what we want.
+#   TODO: Alert the user when this happens.
 
 
 def clear_order_table_container() -> None:
