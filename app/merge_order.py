@@ -1,8 +1,11 @@
+import io
 import json
 import pathlib
 from dataclasses import dataclass
 
 import pandas as pd
+from excel_helpers import export_excel
+from js import URL, File, Uint8Array
 from pyscript import document, window
 
 
@@ -16,10 +19,10 @@ class PlatformHeaderVariableMap:
 
 
 LATEST_ORDER_VARIABLE_CONFIG_FILE_PATH = pathlib.Path(
-    "_resources/krbiz_order_row_name_variables.xlsx"
+    "_resources/krbiz_order_unified_row_names.xlsx"
 )
 DEFAULT_ORDER_VARIABLE_CONFIG_FILE_PATH = pathlib.Path(
-    "_resources/default_krbiz_order_row_name_variables.xlsx"
+    "_resources/default_krbiz_order_unified_row_names.xlsx"
 )
 
 _ORDER_VARIABLE_SETTING_LOCAL_STORAGE_KEY = "ORDER-HEADER-VARIABLES"
@@ -75,7 +78,7 @@ class VariableMappings:
         )
 
 
-def load_order_variables_from_local_storage() -> VariableMappings:
+def load_order_variables_as_dataframe_from_local_storage() -> pd.DataFrame:
     local_storage = window.localStorage
     if local_storage.getItem(_ORDER_VARIABLE_SETTING_LOCAL_STORAGE_KEY) is None:
         _initialize_order_variables_in_local_storage()
@@ -85,13 +88,17 @@ def load_order_variables_from_local_storage() -> VariableMappings:
         order_variables_dict = json.loads(
             local_storage.getItem(_ORDER_VARIABLE_SETTING_LOCAL_STORAGE_KEY)
         )
-        df = pd.DataFrame.from_dict(order_variables_dict)
-        return VariableMappings.from_dataframe(df)
+        return pd.DataFrame.from_dict(order_variables_dict)
     except Exception:
         window.console.log(
             "Error occurred while loading existing variable settings. "
             "Please reset the settings."
         )
+
+
+def load_order_variables_from_local_storage() -> VariableMappings:
+    df = load_order_variables_as_dataframe_from_local_storage()
+    return VariableMappings.from_dataframe(df)
 
 
 def _make_order_variable_preview_row(row_items: list[str]) -> str:
@@ -133,7 +140,24 @@ def upload_new_order_variable_settings(e):
 
 
 def download_current_order_variable_settings(e):
-    window.console.log(e.currentTarget)
+    window.console.log("Preparing the variable setting file.")
+    df = load_order_variables_as_dataframe_from_local_storage()
+    bytes = io.BytesIO()
+    export_excel(df, bytes)
+    bytes_buffer = bytes.getbuffer()
+    js_array = Uint8Array.new(bytes_buffer.nbytes)
+    js_array.assign(bytes_buffer)
+
+    file = File.new(
+        [js_array], LATEST_ORDER_VARIABLE_CONFIG_FILE_PATH.name, {type: "text/plain"}
+    )
+    url = URL.createObjectURL(file)
+
+    hidden_link = document.createElement("a")
+    hidden_link.setAttribute("download", LATEST_ORDER_VARIABLE_CONFIG_FILE_PATH.name)
+    hidden_link.setAttribute("href", url)
+    hidden_link.click()
+    del hidden_link
 
 
 def reset_order_variable_settings(_):
