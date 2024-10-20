@@ -99,5 +99,4 @@ I have been doing this check manually before releasing.
 TODO:
 - [ ] Merge file download button
 - [ ] Translated file download button
-- [ ] Skip preview of the encrypted file if password doesn't work
 - [ ] Validate the password as it is written

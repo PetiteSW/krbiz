@@ -164,9 +164,16 @@ async def upload_order_file(e):
 
 
 def decrypt_bytes(file_name: str) -> bytes:
+    """Decrypt the bytes by the password.
+    Returns ``None`` if password is not valid.
+    """
     password_input = document.getElementById(_make_password_id(file_name))
     file = msoffcrypto.OfficeFile(_order_files[file_name])
-    file.load_key(password=password_input.value)
-    decrypted = io.BytesIO()
-    file.decrypt(decrypted)
-    return decrypted
+    try:
+        file.load_key(password=password_input.value or "")
+        decrypted = io.BytesIO()
+        file.decrypt(decrypted)
+        return decrypted
+    except Exception:
+        window.alert(f"{file_name} 비밀번호를 다시 한 번 확인해주세요.")
+        raise KeyError(f"Password for {file_name} is not valid.")
