@@ -67,7 +67,7 @@ def delete_file(e) -> None:
 def _is_file_encrypted(file_name: str) -> bool:
     file_bytes = _order_files.get(file_name, None)
     if file_bytes is None:
-        window.console.log(f"{file_name} not founded to check if it is encrypted.")
+        window.console.log(f"{file_name} not found to check if it is encrypted.")
         return False
     try:
         pd.read_excel(file_bytes)
