@@ -21,6 +21,11 @@ def translate_df(
         for key, value in variable_map.variable_mapping.items()
         if len(value) > 0
     }
+    # Note that pd.concat is not suitable here
+    # since it does not allow duplicating values.
+    # some platforms might use one column for multiple unified variables.
+    # or they can simply have the same values.
+    # i.e. (reciepient_phone_number, buyer_phone_number) could be the smae.
     for unified_header, platform_header in relevant_mappings.items():
         translated_df[unified_header] = target_df[platform_header]
     return translated_df
