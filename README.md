@@ -84,6 +84,8 @@ I have been doing this check manually before releasing.
     - [ ] ``tests/order-variable-settings/wrong_*.xlsx`` files should alert about
         the wrong configuration and abort the uploading.
         **These files should be warned about wrong dtype of mandatory columns**
+    - [ ] ``tests/wrong_column_name.xlsx`` file should alert an error and abort the uploading.
+        **This file should warn about the wrong pattern of the column name**
     - [ ] ``tests/order-variable-settings/additional*.xlsx`` files should change    the settings accordingly.
         - [ ] Preview should be updated
         - [ ] ``현재 설정파일 내려받기`` file is same as the latest one uploaded.
