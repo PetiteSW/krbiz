@@ -227,6 +227,9 @@ def download_current_order_variable_settings(e):
     hidden_link.setAttribute("download", LATEST_ORDER_VARIABLE_CONFIG_FILE_PATH.name)
     hidden_link.setAttribute("href", url)
     hidden_link.click()
+    # Release the object URL and clean up.
+    URL.revokeObjectURL(url)
+    hidden_link.remove()
     del hidden_link
 
 
