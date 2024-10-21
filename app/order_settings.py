@@ -124,11 +124,17 @@ def _make_order_variable_preview_row(row_items: list[str]) -> str:
 def refresh_order_variable_preview() -> None:
     variable_mappings = load_order_variables_from_local_storage()
     unified_header = variable_mappings.unified_header
-    header_row = _make_order_variable_preview_row(["통합변수", *unified_header])
+    header_row = _make_order_variable_preview_row(
+        ["통합변수", PLATFORM_NAME_COLUMN_NAME, HEADER_ROW_COLUMN_NAME, *unified_header]
+    )
+    # 통합변수 and PLATFORM_NAME_COLUMN_NAME is repeated just to make sure
+    # the user can understand that it is part of the variable.
     rows = [
         _make_order_variable_preview_row(
             [
                 platform.platform,
+                platform.platform,
+                str(platform.header+1),
                 *(
                     platform.variable_mapping[unified_var]
                     for unified_var in unified_header
