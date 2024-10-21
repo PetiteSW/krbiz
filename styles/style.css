@@ -81,6 +81,7 @@ tr.table-header {
 .button {
     text-align: center;
     font-size: 32px;
+    font-family: "DungGeunMo";
     padding: 20px;
     border: thick solid lightgrey;
     border-style: outset;
