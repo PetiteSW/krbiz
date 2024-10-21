@@ -8,8 +8,8 @@ from excel_helpers import export_excel, load_excel
 from js import URL, File, Uint8Array, alert
 from pyscript import document, window
 
-PLATFORM_NAME_COLUMN_NAME = "Platform Name"
-HEADER_ROW_COLUMN_NAME = "Header Row"
+PLATFORM_NAME_COLUMN_NAME = "PlatformName"
+HEADER_ROW_COLUMN_NAME = "HeaderRow"
 
 
 @dataclass
@@ -143,21 +143,6 @@ def refresh_order_variable_preview() -> None:
     preview_box.appendChild(table)
 
 
-def _has_new_order_variable_setting_mandatory_columns(df: pd.DataFrame) -> bool:
-    return (
-        PLATFORM_NAME_COLUMN_NAME in df.columns and HEADER_ROW_COLUMN_NAME in df.columns
-    )
-
-
-def _is_new_order_variable_setting_header_row_integers(df: pd.DataFrame) -> bool:
-    try:
-        for item in df.get(HEADER_ROW_COLUMN_NAME, []):
-            int(item)
-        return True
-    except ValueError:
-        return False
-
-
 def find_matching_variable_map(
     bytes: io.BytesIO, variable_maps: list[PlatformHeaderVariableMap]
 ) -> PlatformHeaderVariableMap | None:
@@ -174,6 +159,28 @@ def find_matching_variable_map(
             ):
                 return variable_map
     return None
+
+
+def _has_new_order_variable_setting_mandatory_columns(df: pd.DataFrame) -> bool:
+    return (
+        PLATFORM_NAME_COLUMN_NAME in df.columns and HEADER_ROW_COLUMN_NAME in df.columns
+    )
+
+
+def _is_new_order_variable_setting_header_row_integers(df: pd.DataFrame) -> bool:
+    try:
+        for item in df.get(HEADER_ROW_COLUMN_NAME, []):
+            int(item)
+        return True
+    except ValueError:
+        return False
+
+
+def _is_all_column_names_valid(df: pd.DataFrame) -> bool:
+    return all(
+        col_name.isidentifier() and not col_name.startswith("_")
+        for col_name in df.columns
+    )
 
 
 async def upload_new_order_variable_settings(e) -> None:
