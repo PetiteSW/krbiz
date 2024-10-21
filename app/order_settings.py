@@ -8,8 +8,8 @@ from excel_helpers import export_excel, load_excel
 from js import URL, File, Uint8Array, alert
 from pyscript import document, window
 
-PLATFORM_NAME_COLUMN_NAME = "Platform Name"
-HEADER_ROW_COLUMN_NAME = "Header Row"
+PLATFORM_NAME_COLUMN_NAME = "PlatformName"
+HEADER_ROW_COLUMN_NAME = "HeaderRow"
 
 
 @dataclass
@@ -73,13 +73,17 @@ class VariableMappings:
     @classmethod
     def from_dataframe(cls, mapping_df: pd.DataFrame) -> "VariableMappings":
         mapping_df = mapping_df.fillna("")
-
         return cls(
             platform_header_variable_maps=[
                 PlatformHeaderVariableMap(
                     platform=row[PLATFORM_NAME_COLUMN_NAME],
                     header=int(row[HEADER_ROW_COLUMN_NAME]) - 1,
-                    variable_mapping={col: row[col] for col in mapping_df.columns[2:]},
+                    variable_mapping={
+                        col: row[col]
+                        for col in mapping_df.columns
+                        if col
+                        not in (PLATFORM_NAME_COLUMN_NAME, HEADER_ROW_COLUMN_NAME)
+                    },
                 )
                 for _, row in mapping_df.iterrows()
             ]
@@ -143,21 +147,6 @@ def refresh_order_variable_preview() -> None:
     preview_box.appendChild(table)
 
 
-def _has_new_order_variable_setting_mandatory_columns(df: pd.DataFrame) -> bool:
-    return (
-        PLATFORM_NAME_COLUMN_NAME in df.columns and HEADER_ROW_COLUMN_NAME in df.columns
-    )
-
-
-def _is_new_order_variable_setting_header_row_integers(df: pd.DataFrame) -> bool:
-    try:
-        for item in df.get(HEADER_ROW_COLUMN_NAME, []):
-            int(item)
-        return True
-    except ValueError:
-        return False
-
-
 def find_matching_variable_map(
     bytes: io.BytesIO, variable_maps: list[PlatformHeaderVariableMap]
 ) -> PlatformHeaderVariableMap | None:
@@ -174,6 +163,33 @@ def find_matching_variable_map(
             ):
                 return variable_map
     return None
+
+
+def _has_new_order_variable_setting_mandatory_columns(df: pd.DataFrame) -> bool:
+    return (
+        PLATFORM_NAME_COLUMN_NAME in df.columns and HEADER_ROW_COLUMN_NAME in df.columns
+    )
+
+
+def _is_new_order_variable_setting_header_row_integers(df: pd.DataFrame) -> bool:
+    try:
+        for item in df.get(HEADER_ROW_COLUMN_NAME, []):
+            int(item)
+        return True
+    except ValueError:
+        return False
+
+
+def _collect_invalid_column_names(df: pd.DataFrame) -> list[str]:
+    import re
+
+    python_variable_pattern = re.compile("^[a-zA-Z_][a-zA-Z0-9_]{0,78}$")
+
+    return [
+        col_name
+        for col_name in df.columns
+        if not python_variable_pattern.match(col_name)
+    ]
 
 
 async def upload_new_order_variable_settings(e) -> None:
@@ -196,6 +212,12 @@ async def upload_new_order_variable_settings(e) -> None:
         err_msg += "해당 행은 각 플랫폼 별 파일의 행이름이"
         err_msg += "몇 번 째 열에 위치하는지를 의미합니다.\n"
         err_msg += "파일을 확인 후 다시 시도해주세요.\n\n"
+    if invalid_names := _collect_invalid_column_names(df):
+        err_msg += "아래 이름은 통합 행 이름으로 적합하지 않습니다.\n"
+        err_msg += '\n'.join(invalid_names) + '\n'
+        err_msg += "행 이름은 숫자로 시작할 수 없고 "
+        err_msg += "영문과 숫자, '_' 기호로만 이루어져야 합니다..\n"
+        err_msg += "설정 파일을 수정 후 다시 시도해주세요.\n\n"
 
     if len(err_msg) > 0:
         # Alert is done once here with all error messages
