@@ -163,7 +163,7 @@ async def upload_order_file(e):
     refresh_table_from_order_files()
 
 
-def decrypt_bytes(file_name: str) -> bytes:
+def _decrypt_bytes(file_name: str) -> io.BytesIO:
     """Decrypt the bytes by the password.
     Returns ``None`` if password is not valid.
     """
@@ -174,6 +174,14 @@ def decrypt_bytes(file_name: str) -> bytes:
         decrypted = io.BytesIO()
         file.decrypt(decrypted)
         return decrypted
-    except Exception:
+    except Exception as e:
         window.alert(f"{file_name} 비밀번호를 다시 한 번 확인해주세요.")
-        raise KeyError(f"Password for {file_name} is not valid.")
+        raise KeyError(f"Password for {file_name} is not valid.") from e
+
+
+def load_order_file(file_name: str) -> io.BytesIO:
+    """Load the bytes from the file and decrypt it if necessary."""
+    if _is_file_encrypted(file_name):
+        return _decrypt_bytes(file_name)
+    else:
+        return _order_files[file_name]

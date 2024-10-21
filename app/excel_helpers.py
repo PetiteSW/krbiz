@@ -11,7 +11,7 @@ def load_excel(file_path: pathlib.Path | io.BytesIO, header_row: int = 0) -> pd.
 def _adjust_column_width(sheet, ref_df: pd.DataFrame) -> None:
     for i_col, col in enumerate(ref_df.columns):
         max_length = max(
-            int(ref_df[col].astype(str).map(len).max()),
+            int(ref_df[col].astype(str).map(len).max()) if len(ref_df) > 0 else 0,
             len(col),
         )
         sheet.set_column(i_col, i_col, min(max_length * 2 + 1, 50))

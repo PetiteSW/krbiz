@@ -1,4 +1,4 @@
-from merge_order import refresh_merge_file_preview
+from merge_order import refresh_merge_file_preview, download_merged_orders
 from order_file_io import initialize_order_list_table, upload_order_file
 from order_settings import (
     download_current_order_variable_settings,
@@ -37,3 +37,6 @@ if __name__ == "__main__":
     when("click", download_setting_button)(download_current_order_variable_settings)
     reset_order_button = document.getElementById("reset-order-variables-button")
     when("click", reset_order_button)(reset_order_variable_settings)
+    # Merge order download button
+    merged_download_button = document.getElementById("merged-orders-download-button")
+    when("click", merged_download_button)(download_merged_orders)
