@@ -4,8 +4,23 @@ import pathlib
 import pandas as pd
 
 
-def load_excel(file_path: pathlib.Path | io.BytesIO, header_row: int = 0) -> pd.DataFrame:
-    return pd.read_excel(file_path, header=header_row, dtype=str).fillna("")
+def load_excel(
+    file_path: pathlib.Path | io.BytesIO, header_row: int = 0, nrows: int | None = None
+) -> pd.DataFrame:
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="Workbook contains no default style, apply openpyxl's default",
+            category=UserWarning,
+        )  # Filter warning about style.
+        return pd.read_excel(
+            file_path,
+            header=header_row,
+            dtype=str,
+            nrows=nrows,
+        ).fillna("")
 
 
 def _adjust_column_width(sheet, ref_df: pd.DataFrame) -> None:

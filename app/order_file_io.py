@@ -9,6 +9,7 @@ from order_settings import (
     load_order_variables_from_local_storage,
     PlatformHeaderVariableMap,
 )
+from excel_helpers import load_excel
 from pyscript import document, when, window
 
 # We are using ``when`` instead of ``create_proxy`` so that we don't have to handle
@@ -87,7 +88,7 @@ def _is_file_encrypted(file_name: str) -> bool:
         window.console.log(f"{file_name} not found to check if it is encrypted.")
         return False
     try:
-        pd.read_excel(file_bytes, nrows=1)  # Just first row to see if it succeeds.
+        load_excel(file_bytes, nrows=1)  # Just first row to see if it succeeds.
         return False
     except xlrd.biffh.XLRDError:
         return True
@@ -114,7 +115,7 @@ def _get_order_numbers(
     if variable_map is None:
         return ""
     else:
-        return str(len(pd.read_excel(file_bytes, header=variable_map.header)))
+        return str(len(load_excel(file_bytes, header_row=variable_map.header)))
 
 
 def get_file_item_row(file_name: str) -> str:

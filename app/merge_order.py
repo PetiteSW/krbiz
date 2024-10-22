@@ -1,5 +1,6 @@
 import html
 import io
+from collections.abc import Generator
 from itertools import product
 
 import pandas as pd
@@ -34,11 +35,10 @@ def translate_df(
     return translated_df
 
 
-def render_merge_preview() -> str:
+def translated_first_rows() -> Generator[pd.DataFrame]:
     from order_file_io import _order_files
 
     variable_mapping = load_order_variables_from_local_storage()
-    rows = []
     for file_name in _order_files:
         try:
             file_bytes = load_order_file(file_name)
@@ -48,27 +48,33 @@ def render_merge_preview() -> str:
             if variable_map is None:
                 window.console.log("Could not find the matching platform.")
             else:
-                original_df = pd.read_excel(
-                    file_bytes, header=variable_map.header, dtype=str, nrows=1
-                ).fillna("")
-                translated = translate_df(original_df, variable_map)
-                row = [file_name]
-                for i_row, col in product(
-                    range(len(translated)), variable_mapping.unified_header
-                ):
-                    if col not in translated.columns:
-                        row.append('')
-                    else:
-                        cell = translated.at[i_row, col]
-                        if (item_length := len(cell)) > 2:
-                            hidden_part = '-' * (item_length - 2)
-                            row.append(html.escape(cell[:2] + hidden_part))
-                        else:
-                            row.append(html.escape(cell))
-                rows.append(row)
+                original_df = load_excel(
+                    file_bytes, header_row=variable_map.header, nrows=1
+                )
+                yield file_name, translate_df(original_df, variable_map)
         except KeyError:  # noqa: PERF203
             # Skip the encrypted file with invalid password.
             ...
+
+
+def render_merge_preview() -> str:
+    variable_mapping = load_order_variables_from_local_storage()
+    rows = []
+    for file_name, translated in translated_first_rows():
+        row = [file_name]
+        for i_row, col in product(
+            range(len(translated)), variable_mapping.unified_header
+        ):
+            if col not in translated.columns:
+                row.append('')
+            else:
+                cell = translated.at[i_row, col]
+                if (item_length := len(cell)) > 2:
+                    hidden_part = '-' * (item_length - 2)
+                    row.append(html.escape(cell[:2] + hidden_part))
+                else:
+                    row.append(html.escape(cell))
+        rows.append(row)
 
     return merge_preview_template.render(
         header_items=['통합변수', *variable_mapping.unified_header], rows=rows

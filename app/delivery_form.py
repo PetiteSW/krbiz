@@ -102,6 +102,7 @@ _DELIVERY_FORMAT_SETTING_LOCAL_SOTRAGE_KEY = "DELIVERY-FORMAT-SETTINGS"
 
 DEFAULT_DELIVERY_FORMAT_FILE_PATH = "_resources/default_krbiz_delivery_format.xlsx"
 
+
 def _update_delivery_format_in_local_storage(new_df: pd.DataFrame) -> None:
     """Update the delivery format in lthe ocal storage."""
     local_storage = window.localStorage
@@ -112,10 +113,14 @@ def _update_delivery_format_in_local_storage(new_df: pd.DataFrame) -> None:
         _DELIVERY_FORMAT_SETTING_LOCAL_SOTRAGE_KEY, delivery_format_str
     )
 
+
 def _initialize_delivery_format_in_local_storage() -> None:
     window.console.log("Initializing delivery format from the default file.")
     delivery_format_df = pd.read_excel(
-        DEFAULT_DELIVERY_FORMAT_FILE_PATH, header=0, dtype=str
+        DEFAULT_DELIVERY_FORMAT_FILE_PATH,
+        header=0,
+        dtype=str,
+        sheet_name="delivery_schema",
     )
     _update_delivery_format_in_local_storage(delivery_format_df)
 
@@ -143,6 +148,13 @@ def load_delivery_format_as_dataframe_from_local_storage() -> pd.DataFrame:
 
 
 def load_delivery_format_from_local_storage() -> DeliveryFormat:
-    df = load_delivery_format_as_dataframe_from_local_storage()
-    # TODO: Catch error here as well.
-    return DeliveryFormat.from_dataframe(df)
+    try:
+        df = load_delivery_format_as_dataframe_from_local_storage()
+        return DeliveryFormat.from_dataframe(df)
+    except Exception:
+        confirm_msg = "배송양식 설정을 불러오는 데에 문제가 생겼습니다.\n"
+        confirm_msg += "설정을 초기화 한 뒤 다시 시도하시겠습니까?\n"
+        if window.confirm(confirm_msg):
+            _initialize_delivery_format_in_local_storage()
+        df = load_delivery_format_as_dataframe_from_local_storage()
+        return DeliveryFormat.from_dataframe(df)

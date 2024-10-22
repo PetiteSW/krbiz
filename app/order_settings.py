@@ -50,7 +50,12 @@ def _initialize_order_variables_in_local_storage() -> None:
     is loaded for the first time.
     """
     window.console.log("Initializing order variables from the default file.")
-    order_variables = pd.read_excel(DEFAULT_ORDER_VARIABLE_CONFIG_FILE_PATH, header=0)
+    order_variables = pd.read_excel(
+        DEFAULT_ORDER_VARIABLE_CONFIG_FILE_PATH,
+        header=0,
+        dtype=str,
+        sheet_name="variable_mapping",
+    )
     _update_order_variables_in_local_storage(order_variables)
 
 
@@ -142,7 +147,7 @@ def refresh_order_variable_preview() -> None:
             [
                 platform.platform,
                 platform.platform,
-                str(platform.header+1),
+                str(platform.header + 1),
                 *(
                     platform.variable_mapping[unified_var]
                     for unified_var in unified_header
