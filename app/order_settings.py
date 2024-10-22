@@ -102,7 +102,6 @@ def load_order_variables_as_dataframe_from_local_storage() -> pd.DataFrame:
         )
         return pd.DataFrame.from_dict(order_variables_dict)
     except Exception:
-        # TODO: Ask the user to reset the settings as well.
         window.console.log(
             "Error occurred while loading existing variable settings. "
             "Please reset the settings."
