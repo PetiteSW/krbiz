@@ -1,4 +1,5 @@
-from merge_order import refresh_merge_file_preview, download_merged_orders
+from delivery_form import download_orders_in_delivery_format
+from merge_order import download_merged_orders, refresh_merge_file_preview
 from order_file_io import initialize_order_list_table, upload_order_file
 from order_settings import (
     download_current_order_variable_settings,
@@ -40,3 +41,7 @@ if __name__ == "__main__":
     # Merge order download button
     merged_download_button = document.getElementById("merged-orders-download-button")
     when("click", merged_download_button)(download_merged_orders)
+    # Delivery format download button
+    delivery_button_id = "delivery-format-orders-download-button"
+    delivery_format_download_button = document.getElementById(delivery_button_id)
+    when("click", delivery_format_download_button)(download_orders_in_delivery_format)

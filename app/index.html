@@ -55,13 +55,13 @@
         <div class="section-container">
             <h1>배송준비 - 합친 주문내역 배송양식에 맞게 바꾸기</h1>
             <div class="module-container" id="order-file-merge-box">
-                <button class="button" disabled>배송양식에 맞춘 전체 주문 내역 내려받기</button>
+                <button class="button" id="delivery-format-orders-download-button">배송양식에 맞춘 전체 주문 내역 내려받기</button>
                 <details>
                     <summary font-size="62">배송양식 변환 ⚙️설정⚙️ (통합된 주문내역을 배송양식에 맞게 변환합니다.)</summary>
                     <p class="explaining-text">
                         ...
                     </p>
-                    <button class="setting-button" ><label for="new-delivery-format-button">설정파일<br>새로<br>올리기</label></button>
+                    <button class="setting-button"><label for="new-delivery-format-button">설정파일<br>새로<br>올리기</label></button>
                     <input type="file" id="new-delivery-format-button" style="display:none">
                     <button class="setting-button" id="download-delivery-format-button">현재<br>설정파일<br>내려받기</button>
                     <button class="setting-button" id="reset-delivery-format-button"><br>초기화<br><br></button>
@@ -73,6 +73,6 @@
             </div>
         </div>
     </div>
-    <script type="py" src="./main.py" config="./pyscript.toml" terminal></script>
+    <script type="py" src="./main.py" config="./pyscript.toml"></script>
 </body>
 </html>
