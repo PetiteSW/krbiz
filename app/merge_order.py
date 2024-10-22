@@ -9,6 +9,7 @@ from excel_helpers import export_excel, load_excel
 from js import URL, File, Uint8Array
 from order_file_io import load_order_file
 from order_settings import (
+    PLATFORM_NAME_COLUMN_NAME,
     PlatformHeaderVariableMap,
     find_matching_variable_map,
     load_order_variables_from_local_storage,
@@ -32,10 +33,11 @@ def translate_df(
     # i.e. (reciepient_phone_number, buyer_phone_number) could be the smae.
     for unified_header, platform_header in relevant_mappings.items():
         translated_df[unified_header] = target_df[platform_header]
+    translated_df[PLATFORM_NAME_COLUMN_NAME] = variable_map.platform
     return translated_df
 
 
-def translated_first_rows() -> Generator[pd.DataFrame]:
+def translated_first_rows() -> Generator[tuple[str, pd.DataFrame]]:
     from order_file_io import _order_files
 
     variable_mapping = load_order_variables_from_local_storage()
@@ -63,7 +65,8 @@ def render_merge_preview() -> str:
     for file_name, translated in translated_first_rows():
         row = [file_name]
         for i_row, col in product(
-            range(len(translated)), variable_mapping.unified_header
+            range(len(translated)),
+            (PLATFORM_NAME_COLUMN_NAME, *variable_mapping.unified_header),
         ):
             if col not in translated.columns:
                 row.append('')
@@ -77,7 +80,12 @@ def render_merge_preview() -> str:
         rows.append(row)
 
     return merge_preview_template.render(
-        header_items=['통합변수', *variable_mapping.unified_header], rows=rows
+        header_items=[
+            '통합변수',
+            PLATFORM_NAME_COLUMN_NAME,
+            *variable_mapping.unified_header,
+        ],
+        rows=rows,
     )
 
 

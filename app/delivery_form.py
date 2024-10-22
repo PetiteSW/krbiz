@@ -1,14 +1,17 @@
+import html
 import io
 import json
 from collections import OrderedDict
-from collections.abc import Hashable
+from collections.abc import Generator, Hashable
 from dataclasses import dataclass
+from itertools import product
 
 import pandas as pd
+from _templates import delivery_format_preview_template
 from excel_helpers import export_excel
 from jinja2 import Template
 from js import URL, File, Uint8Array
-from merge_order import merge_orders
+from merge_order import merge_orders, translated_first_rows
 from pyscript import document, window
 
 DELIVERY_AGENCY_NAME_COLUMN_NAME = "DeliveryAgency"
@@ -53,12 +56,40 @@ def order_to_delivery_format(
     return pd.concat([base_df, *new_rows], verify_integrity=True)
 
 
-def render_delivery_format_preview() -> str: ...
+def delivery_format_fisrt_rows() -> Generator[tuple[str, pd.DataFrame]]:
+    delivery_format = load_delivery_format_from_local_storage()
+    for file_name, translated in translated_first_rows():
+        yield file_name, order_to_delivery_format(translated, delivery_format)
+
+
+def render_delivery_format_preview() -> str:
+    delivery_format = load_delivery_format_from_local_storage()
+
+    delivery_format_headers = tuple(delivery_format.templates.keys())
+    rows = []
+    for file_name, translated in delivery_format_fisrt_rows():
+        row = [file_name]
+        for i_row, col in product(range(len(translated)), delivery_format_headers):
+            if col not in delivery_format_headers:
+                row.append('')
+            else:
+                cell = translated.at[i_row, col]
+                if (item_length := len(cell)) > 2:
+                    hidden_part = '-' * (item_length - 2)
+                    row.append(html.escape(cell[:2] + hidden_part))
+                else:
+                    row.append(html.escape(cell))
+        rows.append(row)
+
+    return delivery_format_preview_template.render(
+        header_items=["", *delivery_format.templates.keys()],
+        rows=rows,
+    )
 
 
 def refresh_delivery_format_file_preview() -> None:
-    preview = document.getElementById("delivery-format-preview-box")
-    table = document.createElement("table")
+    preview = document.getElementById("delivery-format-render-preview-box")
+    table = document.createElement("div")
     table.innerHTML = render_delivery_format_preview()
     for child in preview.children:
         child.remove()

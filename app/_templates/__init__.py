@@ -20,3 +20,16 @@ merge_preview_template = Template(
 </table>
 '''
 )
+delivery_format_preview_template = Template(
+    '''
+<table>
+    <tr class="table-header">
+        {% for item in header_items %}<td class="index-column">{{item}}</td>{% endfor %}
+    </tr>
+    {% for row in rows %}<tr>
+        <td class="index-column separated-column">{% for item in row %}{{item}}</td>
+        {% if not loop.last %}<td>{% endif %}{% endfor %}
+    </tr>{% endfor %}
+</table>
+'''
+)

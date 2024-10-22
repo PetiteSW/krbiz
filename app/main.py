@@ -1,4 +1,7 @@
-from delivery_form import download_orders_in_delivery_format
+from delivery_form import (
+    download_orders_in_delivery_format,
+    refresh_delivery_format_file_preview,
+)
 from merge_order import download_merged_orders, refresh_merge_file_preview
 from order_file_io import initialize_order_list_table, upload_order_file
 from order_settings import (
@@ -27,9 +30,9 @@ if __name__ == "__main__":
     initialize_order_list_table()
     # Refresh previews.
     refresh_order_variable_preview()
-    # Order file upload button event listener
+    # Order file upload button
     when("change", document.getElementById("order-file-upload"))(upload_order_file)
-    # Order related setting input/buttons event listeners
+    # Order related setting input/buttons
     refresh_button = document.getElementById("merge-preview-refresh")
     when("click", refresh_button)(refresh_merge_file_preview)
     new_order_setting_button = document.getElementById("new-order-variables-button")
@@ -38,6 +41,9 @@ if __name__ == "__main__":
     when("click", download_setting_button)(download_current_order_variable_settings)
     reset_order_button = document.getElementById("reset-order-variables-button")
     when("click", reset_order_button)(reset_order_variable_settings)
+    # Delivery format setting buttons
+    delivery_format_preview_button = document.getElementById("delivery-preview-refresh")
+    when("click", delivery_format_preview_button)(refresh_delivery_format_file_preview)
     # Merge order download button
     merged_download_button = document.getElementById("merged-orders-download-button")
     when("click", merged_download_button)(download_merged_orders)

@@ -9,7 +9,7 @@ table {
     width:100%;
     margin-top: 5px;
 }
-table, td{
+table, td {
     border: solid;
     border-collapse: collapse;
 }
@@ -165,6 +165,9 @@ button > img {
 td.index-column {
     background-color: lightgrey;
     min-width: 4em;
+}
+td.separated-column {
+    border: none;
 }
 
 .small-button {
