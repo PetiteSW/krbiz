@@ -110,9 +110,16 @@ def load_order_variables_as_dataframe_from_local_storage() -> pd.DataFrame:
 
 
 def load_order_variables_from_local_storage() -> VariableMappings:
-    df = load_order_variables_as_dataframe_from_local_storage()
-    # TODO: Catch error here as well.
-    return VariableMappings.from_dataframe(df)
+    try:
+        df = load_order_variables_as_dataframe_from_local_storage()
+        return VariableMappings.from_dataframe(df)
+    except Exception:
+        confirm_msg = "주문 통합 열 이름 설정을 불러오는 데에 문제가 생겼습니다.\n"
+        confirm_msg += "설정을 초기화 한 뒤 다시 시도하시겠습니까?\n"
+        if window.confirm(confirm_msg):
+            _initialize_order_variables_in_local_storage()
+        df = load_order_variables_as_dataframe_from_local_storage()
+        return VariableMappings.from_dataframe(df)
 
 
 def _make_order_variable_preview_row(row_items: list[str]) -> str:
