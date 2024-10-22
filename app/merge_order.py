@@ -8,7 +8,6 @@ from excel_helpers import export_excel, load_excel
 from js import URL, File, Uint8Array
 from order_file_io import load_order_file
 from order_settings import (
-    LATEST_ORDER_VARIABLE_CONFIG_FILE_PATH,
     PlatformHeaderVariableMap,
     find_matching_variable_map,
     load_order_variables_from_local_storage,
