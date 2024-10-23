@@ -1,5 +1,6 @@
 from delivery_form import (
     download_orders_in_delivery_format,
+    download_current_delivery_format_setting,
     refresh_delivery_format_file_preview,
     refresh_delivery_format_setting_view,
 )
@@ -46,6 +47,8 @@ if __name__ == "__main__":
     reset_order_button = document.getElementById("reset-order-variables-button")
     when("click", reset_order_button)(reset_order_variable_settings)
     # Delivery format setting buttons
+    d_setting_download_btn = document.getElementById("download-delivery-format-button")
+    when("click", d_setting_download_btn)(download_current_delivery_format_setting)
     delivery_format_preview_button = document.getElementById("delivery-preview-refresh")
     when("click", delivery_format_preview_button)(refresh_delivery_format_file_preview)
     # Merge order download button

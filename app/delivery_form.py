@@ -1,6 +1,7 @@
 import html
 import io
 import json
+import pathlib
 from collections import OrderedDict
 from collections.abc import Generator, Hashable
 from dataclasses import dataclass
@@ -134,7 +135,10 @@ def download_orders_in_delivery_format(_):
 _DELIVERY_FORMAT_SETTING_LOCAL_SOTRAGE_KEY = "DELIVERY-FORMAT-SETTINGS"
 """DO NOT CHANGE THIS VALUE. THIS IS A KEY TO THE LOCAL STORAGE."""
 
-DEFAULT_DELIVERY_FORMAT_FILE_PATH = "_resources/default_krbiz_delivery_format.xlsx"
+DEFAULT_DELIVERY_FORMAT_FILE_PATH = pathlib.Path(
+    "_resources/default_krbiz_delivery_format.xlsx"
+)
+LATEST_DELIVERY_FORMAT_FILE_PATH = pathlib.Path("_resources/krbiz_delivery_format.xlsx")
 
 
 def _update_delivery_format_in_local_storage(new_df: pd.DataFrame) -> None:
@@ -206,3 +210,27 @@ def refresh_delivery_format_setting_view() -> None:
         header_items=df.columns, templates=next(df.iterrows())[-1].to_list()
     )
     preview_box.appendChild(table)
+
+
+def download_current_delivery_format_setting(_) -> None:
+    window.console.log("Preparing the delivery format setting file.")
+    df = load_delivery_format_as_dataframe_from_local_storage()
+    bytes = io.BytesIO()
+    export_excel(df, bytes)
+    bytes_buffer = bytes.getbuffer()
+    js_array = Uint8Array.new(bytes_buffer.nbytes)
+    js_array.assign(bytes_buffer)
+
+    file = File.new(
+        [js_array], LATEST_DELIVERY_FORMAT_FILE_PATH.name, {type: "text/plain"}
+    )
+    url = URL.createObjectURL(file)
+
+    hidden_link = document.createElement("a")
+    hidden_link.setAttribute("download", LATEST_DELIVERY_FORMAT_FILE_PATH.name)
+    hidden_link.setAttribute("href", url)
+    hidden_link.click()
+    # Release the object URL and clean up.
+    URL.revokeObjectURL(url)
+    hidden_link.remove()
+    del hidden_link
