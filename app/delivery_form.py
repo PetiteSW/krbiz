@@ -265,3 +265,8 @@ async def upload_new_delivery_format_settings(e) -> None:
     _update_delivery_format_in_local_storage(new_df=df)
     # Refresh the settings view.
     refresh_delivery_format_setting_view()
+
+
+def reset_delivery_format_settings(_):
+    _initialize_delivery_format_in_local_storage()
+    refresh_delivery_format_setting_view()

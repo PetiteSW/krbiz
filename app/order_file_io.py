@@ -65,11 +65,11 @@ def _make_button_id(file_name: str) -> str:
 def _make_delete_button(file_name: str) -> str:
     button_id = _make_button_id(file_name)
     button_tag = (
-        '<button type="button" class="delete-button" '
+        '<div class="little-button-box"><button type="button" class="delete-button" '
         + f'id="{button_id}" value="{file_name}">'
     )
     trash_icon = '<img src="trash_icon.png" alt="🗑️" height=1em>'
-    return f'{button_tag}{trash_icon}</button>'
+    return f'{button_tag}{trash_icon}</button></div>'
 
 
 def delete_file(e) -> None:

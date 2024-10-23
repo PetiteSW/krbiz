@@ -58,6 +58,7 @@ tr.header-row {
 .section-container {
     display: grid;
     align-items: center;
+    overflow-x: scroll;
 }
 
 .section-container h1 {
@@ -79,6 +80,11 @@ tr.header-row {
     font-size: small;
 }
 
+.big-button-box, .little-button-box {
+    padding: 1em;
+    display: flex;
+    justify-content: center;
+}
 .button {
     text-align: center;
     font-size: 32px;
@@ -87,8 +93,8 @@ tr.header-row {
     border: thick solid lightgrey;
     border-style: outset;
     border-radius: 3px;
-    margin-left: 20%;
-    margin-right: 20%;
+    width: fit-content;
+    white-space: nowrap;
 }
 .button:hover {
     background-color: grey;
