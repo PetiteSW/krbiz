@@ -85,7 +85,7 @@ tr.header-row {
     display: flex;
     justify-content: center;
 }
-.button {
+.big-button {
     text-align: center;
     font-size: 32px;
     font-family: "DungGeunMo";
@@ -96,17 +96,17 @@ tr.header-row {
     width: fit-content;
     white-space: nowrap;
 }
-.button:hover {
+.big-button:hover {
     background-color: grey;
     border-color: grey;
     border-style: inset;
 }
-.button:hover::before {
+.big-button:hover::before {
     content: ">";
     font-size: smaller;
 }
 
-.button:hover::after {
+.big-button:hover::after {
     content: "<";
     font-size: smaller;
 }
