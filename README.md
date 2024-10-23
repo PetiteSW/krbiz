@@ -98,6 +98,10 @@ I have been doing this check manually before releasing.
           of the merged files. **Only the first rows of each file**
     - [ ] When user upload a new order-file, it should show in the preview.
 
+- [ ] Delivery Formatting
+    - [ ] When ``tests/delivery-format-settings/missing-delivery-agency.xlsx`` is
+          registered as a new delivery format, it should show an error and abort.
+
 TODO:
 - [ ] Merge file download button
 - [ ] Translated file download button
