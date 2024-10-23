@@ -246,7 +246,7 @@ async def upload_new_order_variable_settings(e) -> None:
     # If the file is valid.
     # Save the data frame to the local storage.
     _update_order_variables_in_local_storage(new_df=df)
-    # Refresh the settings preview.
+    # Refresh the settings view.
     refresh_order_variable_setting_view()
 
 

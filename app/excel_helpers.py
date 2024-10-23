@@ -20,7 +20,7 @@ def load_excel(
             header=header_row,
             dtype=str,
             nrows=nrows,
-        ).fillna("")
+        ).dropna(how='all').fillna("")
 
 
 def _adjust_column_width(sheet, ref_df: pd.DataFrame) -> None:

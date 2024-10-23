@@ -12,9 +12,9 @@ from _templates import (
     delivery_format_preview_template,
     delivery_format_setting_template,
 )
-from excel_helpers import export_excel
+from excel_helpers import export_excel, load_excel
 from jinja2 import Template
-from js import URL, File, Uint8Array
+from js import URL, File, Uint8Array, alert
 from merge_order import merge_orders, translated_first_rows
 from pyscript import document, window
 
@@ -234,3 +234,34 @@ def download_current_delivery_format_setting(_) -> None:
     URL.revokeObjectURL(url)
     hidden_link.remove()
     del hidden_link
+
+
+def _has_new_delivery_format_mandatory_column(df: pd.DataFrame) -> bool:
+    return DELIVERY_AGENCY_NAME_COLUMN_NAME in list(df.columns)
+
+
+async def upload_new_delivery_format_settings(e) -> None:
+    if len(files := list(e.target.files)) == 0:
+        window.console.log("No file selected.")
+        return
+    uploaded_file = next(iter(files))  # New setting file should be only 1.
+    window.console.log(f"New delivery format file uploaded: {uploaded_file.name}")
+    array_buf = await uploaded_file.arrayBuffer()
+    bytes = io.BytesIO(array_buf.to_bytes())
+    df = load_excel(bytes)
+    window.console.log(df.to_string())
+    err_msg = ""
+    if not _has_new_delivery_format_mandatory_column(df):
+        err_msg = f"필수 항목인 '{DELIVERY_AGENCY_NAME_COLUMN_NAME}' "
+        err_msg += "를 찾을 수 없습니다.\n파일을 확인 후 다시 등록해주세요.\n\n"
+
+    if len(err_msg) > 0:
+        # Alert is done once here with all error messages
+        # to give all feedbacks at once to the user.
+        alert(err_msg)
+        return
+    # If the file is valid.
+    # Save the data frame to the local storage.
+    _update_delivery_format_in_local_storage(new_df=df)
+    # Refresh the settings view.
+    refresh_delivery_format_setting_view()
