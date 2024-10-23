@@ -82,7 +82,7 @@ def render_delivery_format_preview() -> str:
         rows.append(row)
 
     return delivery_format_preview_template.render(
-        header_items=["", *delivery_format.templates.keys()],
+        header_items=["파일출처", *delivery_format.templates.keys()],
         rows=rows,
     )
 

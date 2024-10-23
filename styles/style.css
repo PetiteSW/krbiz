@@ -13,8 +13,9 @@ table, td {
     border: solid;
     border-collapse: collapse;
 }
-tr.table-header {
+tr.header-row {
     text-align: center;
+    background-color: beige;
 }
 .menu-box {
     display: grid;
@@ -163,11 +164,11 @@ button > img {
 }
 
 td.index-column {
+    text-align: center;
     background-color: lightgrey;
     min-width: 4em;
-}
-td.separated-column {
-    border: none;
+    width: auto;
+    white-space: nowrap;
 }
 
 .small-button {

@@ -10,8 +10,9 @@ file_item_row_template = _env.get_template("order-file-list-item.html.jinja")
 merge_preview_template = Template(
     '''
 <table>
-    <tr class="table-header">
-        {% for item in header_items %}<td class="index-column">{{item}}</td>{% endfor %}
+    <tr class="header-row">
+        <td class="index-column">{% for item in header_items %}{{item}}</td>
+        {% if not loop.last %}<td>{% endif %}{% endfor %}
     </tr>
     {% for row in rows %}<tr>
         <td class="index-column">{% for item in row %}{{item}}</td>
@@ -23,11 +24,12 @@ merge_preview_template = Template(
 delivery_format_preview_template = Template(
     '''
 <table>
-    <tr class="table-header">
-        {% for item in header_items %}<td class="index-column">{{item}}</td>{% endfor %}
+    <tr class="header-row">
+        <td class="index-column">{% for item in header_items %}{{item}}</td>
+        {% if not loop.last %}<td>{% endif %}{% endfor %}
     </tr>
     {% for row in rows %}<tr>
-        <td class="index-column separated-column">{% for item in row %}{{item}}</td>
+        <td class="index-column">{% for item in row %}{{item}}</td>
         {% if not loop.last %}<td>{% endif %}{% endfor %}
     </tr>{% endfor %}
 </table>
