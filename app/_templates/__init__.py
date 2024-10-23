@@ -21,6 +21,18 @@ merge_preview_template = Template(
 </table>
 '''
 )
+delivery_format_setting_template = Template(
+    '''
+<table>
+    <tr class="header-row">
+        {% for item in header_items %}<td>{{item}}</td>{% endfor %}
+    </tr>
+    <tr>
+        {% for item in templates %}<td>{{item}}</td>{% endfor %}
+    </tr>
+</table>
+'''
+)
 delivery_format_preview_template = Template(
     '''
 <table>

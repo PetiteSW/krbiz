@@ -134,7 +134,7 @@ def _make_order_variable_preview_row(row_items: list[str]) -> str:
     )
 
 
-def refresh_order_variable_preview() -> None:
+def refresh_order_variable_setting_view() -> None:
     variable_mappings = load_order_variables_from_local_storage()
     unified_header = variable_mappings.unified_header
     header_row = _make_order_variable_preview_row(
@@ -156,7 +156,7 @@ def refresh_order_variable_preview() -> None:
         )
         for platform in variable_mappings.platform_header_variable_maps
     ]
-    preview_box = document.getElementById("order-variable-preview-box")
+    preview_box = document.getElementById("order-variable-setting-view-box")
     table = document.createElement("table")
     # Clear the box
     for child in preview_box.children:
@@ -247,7 +247,7 @@ async def upload_new_order_variable_settings(e) -> None:
     # Save the data frame to the local storage.
     _update_order_variables_in_local_storage(new_df=df)
     # Refresh the settings preview.
-    refresh_order_variable_preview()
+    refresh_order_variable_setting_view()
 
 
 def download_current_order_variable_settings(e):
@@ -276,4 +276,4 @@ def download_current_order_variable_settings(e):
 
 def reset_order_variable_settings(_):
     _initialize_order_variables_in_local_storage()
-    refresh_order_variable_preview()
+    refresh_order_variable_setting_view()

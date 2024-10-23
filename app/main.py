@@ -1,12 +1,13 @@
 from delivery_form import (
     download_orders_in_delivery_format,
     refresh_delivery_format_file_preview,
+    refresh_delivery_format_setting_view,
 )
 from merge_order import download_merged_orders, refresh_merge_file_preview
 from order_file_io import initialize_order_list_table, upload_order_file
 from order_settings import (
     download_current_order_variable_settings,
-    refresh_order_variable_preview,
+    refresh_order_variable_setting_view,
     reset_order_variable_settings,
     upload_new_order_variable_settings,
 )
@@ -29,7 +30,10 @@ if __name__ == "__main__":
     # Initialize Order list table.
     initialize_order_list_table()
     # Refresh previews.
-    refresh_order_variable_preview()
+    refresh_merge_file_preview()
+    refresh_order_variable_setting_view()
+    refresh_delivery_format_file_preview()
+    refresh_delivery_format_setting_view()
     # Order file upload button
     when("change", document.getElementById("order-file-upload"))(upload_order_file)
     # Order related setting input/buttons

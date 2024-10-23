@@ -7,7 +7,10 @@ from dataclasses import dataclass
 from itertools import product
 
 import pandas as pd
-from _templates import delivery_format_preview_template
+from _templates import (
+    delivery_format_preview_template,
+    delivery_format_setting_template,
+)
 from excel_helpers import export_excel
 from jinja2 import Template
 from js import URL, File, Uint8Array
@@ -189,3 +192,17 @@ def load_delivery_format_from_local_storage() -> DeliveryFormat:
             _initialize_delivery_format_in_local_storage()
         df = load_delivery_format_as_dataframe_from_local_storage()
         return DeliveryFormat.from_dataframe(df)
+
+
+def refresh_delivery_format_setting_view() -> None:
+    df = load_delivery_format_as_dataframe_from_local_storage()
+    preview_box = document.getElementById("delivery-format-setting-viewer-box")
+    table = document.createElement("table")
+    # Clear the box
+    for child in preview_box.children:
+        child.remove()
+    # Append the table
+    table.innerHTML = delivery_format_setting_template.render(
+        header_items=df.columns, templates=next(df.iterrows())[-1].to_list()
+    )
+    preview_box.appendChild(table)
