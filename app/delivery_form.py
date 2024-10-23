@@ -14,7 +14,7 @@ from _templates import (
 )
 from excel_helpers import export_excel, load_excel
 from jinja2 import Template
-from js import URL, File, Uint8Array, alert
+from js import URL, File, Uint8Array, alert, confirm
 from merge_order import merge_orders, translated_first_rows
 from pyscript import document, window
 
@@ -268,5 +268,14 @@ async def upload_new_delivery_format_settings(e) -> None:
 
 
 def reset_delivery_format_settings(_):
-    _initialize_delivery_format_in_local_storage()
-    refresh_delivery_format_setting_view()
+    if confirm(
+        "설정을 초기화 하시면 현재 설정사항이 브라우저에서 삭제됩니다. \n"
+        "초기화를 진행하시겠습니까?"
+    ) and confirm(
+        "진짜 지워도 되는거죠?? 🤔"
+    ) and confirm(
+        "진짜 마지막으로 물어볼게요. 진짜, 진짜로 지웁니다??? 🤨"
+    ):
+        _initialize_delivery_format_in_local_storage()
+        refresh_delivery_format_setting_view()
+        alert("배송양식 ⚙️설정⚙️이 초기화 되었습니다.")

@@ -6,6 +6,7 @@ from delivery_form import (
     reset_delivery_format_settings,
     upload_new_delivery_format_settings,
 )
+from js import confirm
 from merge_order import download_merged_orders, refresh_merge_file_preview
 from order_file_io import initialize_order_list_table, upload_order_file
 from order_settings import (
@@ -14,7 +15,7 @@ from order_settings import (
     reset_order_variable_settings,
     upload_new_order_variable_settings,
 )
-from pyscript import document, when
+from pyscript import document, when, window
 
 # We are using ``when`` instead of ``create_proxy`` so that we don't have to handle
 # garbagae collections of proxies.
@@ -22,6 +23,7 @@ from pyscript import document, when
 
 
 if __name__ == "__main__":
+    window.onbeforeunload = confirm
     # Initialize Order list table.
     initialize_order_list_table()
     # Refresh previews.

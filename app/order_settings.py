@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 from excel_helpers import export_excel, load_excel
-from js import URL, File, Uint8Array, alert
+from js import URL, File, Uint8Array, alert, confirm
 from pyscript import document, window
 
 PLATFORM_NAME_COLUMN_NAME = "PlatformName"
@@ -275,5 +275,14 @@ def download_current_order_variable_settings(e):
 
 
 def reset_order_variable_settings(_):
-    _initialize_order_variables_in_local_storage()
-    refresh_order_variable_setting_view()
+    if confirm(
+        "설정을 초기화 하시면 이전의 설정사항이 브라우저에서 삭제됩니다. \n"
+        "초기화를 진행하시겠습니까?"
+    ) and confirm(
+        "진짜 지워도 되는거죠?? 🤔"
+    ) and confirm(
+        "진짜 마지막으로 물어볼게요. 진짜, 진짜로 지웁니다??? 🤨"
+    ):
+        _initialize_order_variables_in_local_storage()
+        refresh_order_variable_setting_view()
+        alert("통합 열 ⚙️설정⚙️이 초기화 되었습니다.")
