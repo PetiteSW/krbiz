@@ -55,6 +55,10 @@ tr.header-row {
     text-align: center;
     background-color: beige;
 }
+td.short-column {
+    text-align: center;
+}
+
 .menu-box {
     display: grid;
     align-items: center;
@@ -170,6 +174,9 @@ button > img {
     text-align: center;
 }
 
+.uncertain-order-file {
+    background-color: lightblue;
+}
 .uncertain-order-file > .order-file-validity::before {
     content: '?';
 }
