@@ -5,6 +5,37 @@
 body {
     font-family: "DungGeunMo";
 }
+.page {
+    display: flex;
+    background-color: lightgray;
+}
+.clinging-bar {
+    position: fixed;
+    top: 20px;
+    left: 75%;
+}
+.clinging-bar p {
+    text-align: center;
+}
+.clinging-bar a {
+    text-decoration: none;
+    color: black;
+}
+.clinging-bar button{
+    border-style: thick solid outset;
+    border-color: grey;
+    font-size: 1.1em;
+    width: fit-content;
+    font-family: "DungGeunMo";
+    padding: 1em;
+    border-width: 5px;
+}
+.clinging-bar button:hover {
+    border-style: inset;
+    background-color: grey;
+    border-color: black;
+}
+
 table {
     width:100%;
     margin-top: 5px;
@@ -50,9 +81,10 @@ tr.header-row {
 }
 
 .app-container {
-    margin-left: 1%;
-    margin-right: 1%;
+    margin: 1%;
+    padding: 1%;
     width: 68%;
+    background-color: white;
 }
 
 .section-container {
