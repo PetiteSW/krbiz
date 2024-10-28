@@ -6,13 +6,19 @@ body {
     font-family: "DungGeunMo";
 }
 .page {
-    display: flex;
+    display: grid;
     background-color: lightgray;
+    grid-template-areas:
+        'main right';
+    gap: 4em;
+    overflow-x: scroll;
+    padding: 1em;
 }
 .clinging-bar {
-    position: fixed;
-    top: 20px;
-    left: 75%;
+    align-self: middle;
+    width: fit-content;
+    min-width: fit-content;
+    height: fit-content;
 }
 .clinging-bar p {
     text-align: center;
@@ -20,6 +26,7 @@ body {
 .clinging-bar a {
     text-decoration: none;
     color: black;
+    align-self: center;
 }
 .clinging-bar button{
     border-style: thick solid outset;
@@ -81,9 +88,8 @@ tr.header-row {
 }
 
 .app-container {
-    margin: 1%;
-    padding: 1%;
-    width: 68%;
+    padding: 1em;
+    width: fit-content;
     background-color: white;
 }
 
