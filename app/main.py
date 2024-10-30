@@ -15,6 +15,7 @@ from order_settings import (
     reset_order_variable_settings,
     upload_new_order_variable_settings,
 )
+from split_delivery import upload_delivery_confirmation, refresh_delivery_split_result
 from pyscript import document, when, window
 
 # We are using ``when`` instead of ``create_proxy`` so that we don't have to handle
@@ -49,7 +50,9 @@ if __name__ == "__main__":
     when("click", d_setting_download_btn)(download_current_delivery_format_setting)
     delivery_format_preview_button = document.getElementById("delivery-preview-refresh")
     when("click", delivery_format_preview_button)(refresh_delivery_format_file_preview)
-    reset_delivery_format_button = document.getElementById("reset-delivery-format-button")
+    reset_delivery_format_button = document.getElementById(
+        "reset-delivery-format-button"
+    )
     when("click", reset_delivery_format_button)(reset_delivery_format_settings)
     # Merge order download button
     merged_download_button = document.getElementById("merged-orders-download-button")
@@ -58,3 +61,12 @@ if __name__ == "__main__":
     delivery_button_id = "delivery-format-orders-download-button"
     delivery_format_download_button = document.getElementById(delivery_button_id)
     when("click", delivery_format_download_button)(download_orders_in_delivery_format)
+
+    # Delivery splitting
+    delivery_confirmation_upload_btn = document.getElementById("delivery-file-upload")
+    when("change", delivery_confirmation_upload_btn)(upload_delivery_confirmation)
+
+    delivery_split_refresh_btn = document.getElementById(
+        "delivery-split-result-refresh"
+    )
+    when("click", delivery_split_refresh_btn)(refresh_delivery_split_result)

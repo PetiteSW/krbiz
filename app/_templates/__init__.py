@@ -47,3 +47,6 @@ delivery_format_preview_template = Template(
 </table>
 '''
 )
+
+delivery_split_table_template = _env.get_template("delivery-split-table.html.jinja")
+delivery_split_row_template = _env.get_template("delivery-split-list-item.html.jinja")

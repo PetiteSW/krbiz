@@ -100,12 +100,15 @@
                 <h2 class="file-upload-module-text">배송내역 파일 올리기</h2>
                 <div class="big-button-box">
                     <label class="big-button" for="delivery-file-upload">눌러서 파일 찾기 ...</label>
-                    <input type="file" id="delivery-file-upload" multiple style="display:none"> <br>
+                    <input type="file" id="delivery-file-upload" style="display:none"> <br>
                 </div>
                 <details open>
                     <summary>
                         판매경로별로 분리된 배송정보
                     </summary>
+                    <button id="delivery-split-result-refresh" class="small-button">🔄새로고침🔄</button>
+                    <div id="delivery-split-result-container">
+                    </div>
 
                 </details>
                 <details open>
