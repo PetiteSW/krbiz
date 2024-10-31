@@ -226,7 +226,7 @@ td.index-column {
 .small-button {
     font-family: "DungGeunMo";
     border-style: outset;
-    background-color: white;
+    background-color: lightgrey;
     border-color: grey;
 }
 .small-button:hover {
