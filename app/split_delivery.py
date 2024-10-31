@@ -12,7 +12,7 @@ from order_settings import (
     find_matching_variable_map,
     load_order_variables_from_local_storage,
 )
-from pyscript import document, window, when
+from pyscript import document, when, window
 
 _delivery_confirmation = {}
 
@@ -185,7 +185,7 @@ def insert_delivery_tracking_code(
         duplicated_dfs = [row.to_frame().T for row in duplicated]
         merged_duplications = pd.concat(duplicated_dfs)
         window.alert(
-            "아래 운송장 정보는 입력할 수 없었습니다: \n"
+            f"총 {len(duplicated)}개의 운송장 정보를 입력할 수 없었습니다: \n"
             + ','.join(merged_duplications['운송장번호'])
         )
 
@@ -193,7 +193,7 @@ def insert_delivery_tracking_code(
         non_matched_dfs = [row.to_frame().T for row in non_matched]
         non_matched_duplications = pd.concat(non_matched_dfs)
         window.alert(
-            "아래 운송장 정보는 입력할 수 없었습니다: \n"
+            f"총 {len(non_matched)}개의 운송장 정보를 입력할 수 없었습니다: \n"
             + ','.join(non_matched_duplications['운송장번호'])
         )
 
