@@ -94,7 +94,7 @@ td.short-column {
 .app-container {
     padding: 1em;
     min-width: fit-content;
-    width: 70%;
+    width: 100%;
     background-color: white;
 }
 
