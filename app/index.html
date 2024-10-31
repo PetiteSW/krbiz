@@ -102,15 +102,16 @@
                     <label class="big-button" for="delivery-file-upload">눌러서 파일 찾기 ...</label>
                     <input type="file" id="delivery-file-upload" style="display:none"> <br>
                 </div>
+                <p id="delivery_confirmation_file_name"></p>
                 <details open>
                     <summary>
-                        판매경로별로 분리된 배송정보
+                        판매경로별로 분리된 배송정보 <button id="delivery-split-result-refresh" class="small-button">🔄새로고침🔄</button>
                     </summary>
-                    <button id="delivery-split-result-refresh" class="small-button">🔄새로고침🔄</button>
                     <div id="delivery-split-result-container">
                     </div>
 
                 </details>
+                <!-- TODO: Settings
                 <details open>
                     <summary font-size="62">판매경로별 배송정보 등록양식 ⚙️설정⚙️ (판매경로별로 배송정보 등록양식을 관리합니다.)</summary>
                     <p class="explaining-text">
@@ -125,6 +126,7 @@
                     <button class="setting-button"><label for="new-delivery-report-button">+ 양식파일 추가하기</label></button>
                     <input type="file" id="new-delivery-report-button" style="display:none">
                 </details>
+                -->
             </div>
         </div>
     </div>
