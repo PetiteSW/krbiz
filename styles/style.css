@@ -57,6 +57,7 @@ tr.header-row {
 }
 td.short-column {
     text-align: center;
+    width: fit-content;
 }
 
 .menu-box {
@@ -233,4 +234,17 @@ td.index-column {
     border-style: inset;
     background-color: grey;
     border-color: black;
+}
+
+table.failure-compensation {
+    border-color: darkred;
+    border-width: 3px;
+}
+
+table.failure-compensation tr.header-row {
+    background-color: pink;
+}
+
+table.failure-compensation tr:nth-child(odd):not(.header-row) {
+    background-color: lightgrey;
 }

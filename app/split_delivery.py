@@ -3,7 +3,11 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 import pandas as pd
-from _templates import delivery_split_row_template, delivery_split_table_template
+from _templates import (
+    delivery_left_over_table_template,
+    delivery_split_row_template,
+    delivery_split_table_template,
+)
 from excel_helpers import export_excel, load_excel
 from js import URL, File, Uint8Array
 from order_file_io import get_bytes_from_file, load_order_file
@@ -53,9 +57,8 @@ class DeliveryInforUpdatedFileSpec:
 
 def clear_delivery_result_container() -> None:
     container = document.getElementById(_DELIVERY_SPLIT_RESULT_CONTAINER_ID)
-    for child in container.children:
-        container.removeChild(child)
-
+    window.console.log(f"Removing {len(container.children)} children")
+    container.replaceChildren()
 
 def collect_valid_orders() -> dict[str, ValidOrderFileSpec]:
     from order_file_io import _order_files
@@ -149,7 +152,7 @@ def _find_tracking_code_column(df: pd.DataFrame) -> str:
 def insert_delivery_tracking_code(
     orders: dict[str, ValidOrderFileSpec],
     delivery_confirmation: DeliveryConfirmationFileSpec,
-) -> dict[str, DeliveryInforUpdatedFileSpec]:
+) -> tuple[dict[str, DeliveryInforUpdatedFileSpec], pd.DataFrame]:
     results = {file_name: [] for file_name in orders}
     delivery_df = delivery_confirmation.data_frame.copy(deep=True)
     non_matched = []
@@ -180,7 +183,7 @@ def insert_delivery_tracking_code(
                 results[matched_file_name].append(inserted)
 
     merged_result = {file_name: pd.concat(rows) for file_name, rows in results.items()}
-
+    left_over = pd.DataFrame(columns=delivery_confirmation.data_frame.columns)
     if duplicated:
         duplicated_dfs = [row.to_frame().T for row in duplicated]
         merged_duplications = pd.concat(duplicated_dfs)
@@ -188,6 +191,7 @@ def insert_delivery_tracking_code(
             f"총 {len(duplicated)}개의 운송장 정보를 입력할 수 없었습니다: \n"
             + ','.join(merged_duplications['운송장번호'])
         )
+        left_over = pd.concat([left_over, merged_duplications])
 
     if non_matched:
         non_matched_dfs = [row.to_frame().T for row in non_matched]
@@ -196,6 +200,7 @@ def insert_delivery_tracking_code(
             f"총 {len(non_matched)}개의 운송장 정보를 입력할 수 없었습니다: \n"
             + ','.join(non_matched_duplications['운송장번호'])
         )
+        left_over = pd.concat([left_over, non_matched_duplications])
 
     return {
         order_file_spec.file_name: DeliveryInforUpdatedFileSpec(
@@ -204,7 +209,19 @@ def insert_delivery_tracking_code(
             data_frame=merged_result[file_name],
         )
         for file_name, order_file_spec in orders.items()
-    }
+    }, left_over.loc[:, (left_over != '').any()]
+
+
+def render_leftover_delivery_info(container, left_over_df: pd.DataFrame) -> None:
+    table = document.createElement('div')
+    table.innerHTML = delivery_left_over_table_template.render(
+        headers=left_over_df.columns,
+        rows=[
+            [row[col] for col in left_over_df.columns]
+            for _, row in left_over_df.iterrows()
+        ],
+    )
+    container.appendChild(table)
 
 
 def refresh_delivery_split_result() -> None:
@@ -228,13 +245,16 @@ def refresh_delivery_split_result() -> None:
     container = document.getElementById(_DELIVERY_SPLIT_RESULT_CONTAINER_ID)
     container.appendChild(table)
 
-    updated = insert_delivery_tracking_code(
+    updated, left_over_df = insert_delivery_tracking_code(
         orders=orders, delivery_confirmation=_delivery_confirmation["latest"]
     )
     # Add event listener to the download button
     for file_name, file_spec in updated.items():
         button = document.getElementById(_get_download_button_id(file_name))
         when("click", button)(_generate_download_event_handler(file_spec))
+
+    # Render left over ones if needed
+    render_leftover_delivery_info(container, left_over_df)
 
 
 async def save_delivery_confirmation_file(file_obj) -> None:

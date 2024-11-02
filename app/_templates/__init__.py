@@ -50,3 +50,20 @@ delivery_format_preview_template = Template(
 
 delivery_split_table_template = _env.get_template("delivery-split-table.html.jinja")
 delivery_split_row_template = _env.get_template("delivery-split-list-item.html.jinja")
+
+delivery_left_over_table_template = Template(
+    '''
+<div>
+<p>⬇️⬇️ 주문내역을 찾지 못한 운송장
+ (두 개 이상의 주문내역과 쌍을 이루거나
+ 주문내역을 한 개도 찾을 수 없는 운송장 정보) ⬇️⬇️</p>
+<table class="failure-compensation">
+    <tr class="header-row">{% for header_item in headers %}
+    <td class="short-column">{{header_item}}</td>{% endfor %}</tr>
+    {% for row in rows %}<tr>
+        {% for col in row %}<td class="short-column">{{col}}</td>{% endfor %}
+    </tr>{% endfor %}
+</table>
+</div>
+'''
+)
