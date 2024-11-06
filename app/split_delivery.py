@@ -60,6 +60,7 @@ def clear_delivery_result_container() -> None:
     window.console.log(f"Removing {len(container.children)} children")
     container.replaceChildren()
 
+
 def collect_valid_orders() -> dict[str, ValidOrderFileSpec]:
     from order_file_io import _order_files
 
@@ -128,18 +129,30 @@ def _generate_download_event_handler(
     return download_delivery_split
 
 
+def _remove_empty_space(msgs: list[str]) -> list[str]:
+    return [msg.strip() if isinstance(msg, str) else msg for msg in msgs]
+
+
 def _are_matching_rows(delivery_row: pd.Series, order_row: pd.Series) -> bool:
     name_column = "수하인명"
     product_name_column = "상품명"
     delivery_note_column = "특기사항"
-    num_producet_column = "내품개수"
     must_match_cols = (
         name_column,
         product_name_column,
         delivery_note_column,
-        num_producet_column,
     )
-    return all(delivery_row[col] in order_row.values for col in must_match_cols)
+    window.console.log(delivery_row['특기사항'])
+    window.console.log(order_row.values)
+    return all(
+        (delivery_row[col] == '')
+        or (delivery_row[col] in order_row.values)
+        or (
+            isinstance(delivery_row[col], str)
+            and (delivery_row[col].strip() in _remove_empty_space(order_row.values))
+        )
+        for col in must_match_cols
+    )
 
 
 def _find_tracking_code_column(df: pd.DataFrame) -> str:
@@ -153,7 +166,10 @@ def insert_delivery_tracking_code(
     orders: dict[str, ValidOrderFileSpec],
     delivery_confirmation: DeliveryConfirmationFileSpec,
 ) -> tuple[dict[str, DeliveryInforUpdatedFileSpec], pd.DataFrame]:
-    results = {file_name: [] for file_name in orders}
+    results = {
+        file_name: [pd.DataFrame(columns=file_spec.data_frame.columns)]
+        for file_name, file_spec in orders.items()
+    }
     delivery_df = delivery_confirmation.data_frame.copy(deep=True)
     non_matched = []
     duplicated = []
