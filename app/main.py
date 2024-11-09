@@ -15,12 +15,37 @@ from order_settings import (
     reset_order_variable_settings,
     upload_new_order_variable_settings,
 )
-from split_delivery import upload_delivery_confirmation, refresh_delivery_split_result
 from pyscript import document, when, window
+from split_delivery import refresh_delivery_split_result, upload_delivery_confirmation
+from split_delivery_settings import (
+    add_delivery_info_key,
+    initialize_delivery_key_format,
+    refresh_delivery_info_keys_table,
+)
 
 # We are using ``when`` instead of ``create_proxy`` so that we don't have to handle
 # garbagae collections of proxies.
 # See https://docs.pyscript.net/2024.10.1/user-guide/ffi/#create_proxy for details.
+
+
+async def upload_new_order_variable_setting_and_refresh_select_options(e) -> None:
+    try:
+        await upload_new_order_variable_settings(e)
+    except Exception:
+        ...  # Do not refresh selections
+    else:
+        # TODO: Validate the existing delivery key settings.
+        initialize_delivery_key_format()  # Refresh options
+
+
+def reset_order_variable_setting_and_refresh_select_options(e) -> None:
+    try:
+        reset_order_variable_settings(e)
+    except Exception:
+        ...  # Do not refresh selections
+    else:
+        # TODO: Validate the existing delivery key settings.
+        initialize_delivery_key_format()  # Refresh options
 
 
 if __name__ == "__main__":
@@ -38,11 +63,15 @@ if __name__ == "__main__":
     refresh_button = document.getElementById("merge-preview-refresh")
     when("click", refresh_button)(refresh_merge_file_preview)
     new_order_setting_button = document.getElementById("new-order-variables-button")
-    when("change", new_order_setting_button)(upload_new_order_variable_settings)
+    when("change", new_order_setting_button)(
+        upload_new_order_variable_setting_and_refresh_select_options
+    )
     download_setting_button = document.getElementById("download-order-variables-button")
     when("click", download_setting_button)(download_current_order_variable_settings)
     reset_order_button = document.getElementById("reset-order-variables-button")
-    when("click", reset_order_button)(reset_order_variable_settings)
+    when("click", reset_order_button)(
+        reset_order_variable_setting_and_refresh_select_options
+    )
     # Delivery format setting buttons
     d_setting_upload_btn = document.getElementById("new-delivery-format-button")
     when("change", d_setting_upload_btn)(upload_new_delivery_format_settings)
@@ -70,3 +99,8 @@ if __name__ == "__main__":
         "delivery-split-result-refresh"
     )
     when("click", delivery_split_refresh_btn)(refresh_delivery_split_result)
+
+    # Delivery splitting settings
+    initialize_delivery_key_format()  # This should be after order settings.
+    refresh_delivery_info_keys_table()
+    document.getElementById("add-delivery-info-key").onsubmit = add_delivery_info_key

@@ -25,4 +25,5 @@ packages = [
 "excel_helpers.py" = "excel_helpers.py"
 "delivery_form.py" = "delivery_form.py"
 "split_delivery.py" = "split_delivery.py"
+"split_delivery_settings.py" = "split_delivery_settings.py"
 "main.py" = "main.py"
