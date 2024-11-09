@@ -114,11 +114,17 @@
                     <div id="delivery-split-result-container"></div>
                 </details>
                 <details open>
-                    <summary font-size="62">배송정보-주문정보 짝 찾기 ⚙️설정⚙️ (운송장을 입력할 주문정보를 찾을 수 있도록 설정합니다.)</summary>
-                    <!--
-                    <button class="setting-button"><label for="new-delivery-report-button">+ 양식파일 추가하기</label></button>
-                    <input type="file" id="new-delivery-report-button" style="display:none">
-                    -->
+                    <summary font-size="62">배송정보-주문정보(통합 열 이름) 짝 찾기 ⚙️설정⚙️ (운송장을 입력할 주문정보를 찾을 수 있도록 설정합니다.)</summary>
+                    <p>[배송정보-주문정보 짝 찾기 현재 설정] - 아래 열 이름 짝을 이용해 각 플랫폼 별로 운송장 정보를 입력할 주문건을 찾습니다.</p>
+                    <div id="delivery-info-keys-viewer-box"></div> <br>
+                    <form id="add-delivery-info-key">
+                        <label for="delivery-info-header-key">배송정보 열 이름:</label>
+                        <input type="text" id="delivery-info-header-key" name="delivery-info-header-key">
+                        <label for="unified-variable-key-selection">통합 열 이름:</label>
+                        <select type="select" id="unified-variable-key-selection" name="unified-variable-key-selection">
+                        </select>
+                        <input type="submit" value="+ 열 이름 짝 추가하기">
+                    </form>
                 </details>
             </div>
         </div>
