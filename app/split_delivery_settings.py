@@ -2,6 +2,7 @@ import json
 from collections.abc import Callable
 from dataclasses import dataclass
 
+import pandas as pd
 from js import confirm
 from order_settings import load_order_variables_from_local_storage
 from pyscript import document, when, window
@@ -20,6 +21,7 @@ class DeliveryInfoKey:
 @dataclass
 class DeliveryInfoKeysRegistry:
     """Proxy to the local storage."""
+
     keys: tuple[DeliveryInfoKey, ...]
 
     def add_key(self, delivery_info_header: str, unified_variable_name: str) -> None:
@@ -95,7 +97,7 @@ def _update_delivery_info_keys_in_local_storage(
 
 def _initialize_delivery_info_keys_in_local_storage() -> None:
     window.console.log("Initializing delivery info keys as defaults.")
-    default_vars_to_header = {"수하인명": "receipients_name", "상품명": "product_name"}
+    default_vars_to_header = {"수하인명": "receipients_name", "상품명": "option_info"}
     _update_delivery_info_keys_in_local_storage(default_vars_to_header)
 
 
@@ -187,3 +189,131 @@ def refresh_delivery_info_keys_table(_=None) -> None:
         when("click", del_button)(
             make_delete_button_event_listener(key.delivery_info_header)
         )
+
+
+@dataclass
+class DeliveryReportMapping:
+    target: str  # Target column to be replaced.
+
+
+@dataclass
+class FromDeliveryConfirmation(DeliveryReportMapping):
+    column: str  # Column from delivery confirmation that needs to be replaced.
+
+
+@dataclass
+class FromOriginalOrderFile(DeliveryReportMapping):
+    column: str  # Column from order file that needs to be replaced with.
+
+
+@dataclass
+class HardcodedColumn(DeliveryReportMapping):
+    value: str  # Hardcoded value for a column.
+
+
+@dataclass
+class _PlatformDeliveryReportSetting:
+    headers: pd.DataFrame  # pandas data frame that only has column names.
+    # The order is very important.
+    mappings: dict[str, DeliveryReportMapping]
+
+    def render(
+        self, order_row: pd.Series, delivery_row: pd.Series | None
+    ) -> pd.DataFrame:
+        base = self.headers.copy(deep=True)
+        for col in base.columns:
+            mapping = self.mappings.get(
+                col,
+                FromOriginalOrderFile(target=col, column=col),  # Always fall back
+            )
+            window.console.log(str(mapping))
+            # Parse the value based on the mapping setting.
+            if isinstance(mapping, FromOriginalOrderFile):
+                value = order_row.get(
+                    mapping.column, default=""
+                )  # Leave it empty if not found.
+            elif isinstance(mapping, FromDeliveryConfirmation) and (
+                delivery_row is not None
+            ):
+                value = delivery_row.get(mapping.column, default="")
+            elif isinstance(mapping, HardcodedColumn):
+                value = mapping.value
+            else:
+                value = ""
+
+            # Render - one row
+            base[col] = [value]
+        return base
+
+
+def _load_excel_file_as_platform_report_setting(
+    file_name,
+) -> _PlatformDeliveryReportSetting:
+    from excel_helpers import load_excel
+
+    df = load_excel(file_name, nrows=3)
+    mappings = {}
+    for i_row, row in df.iterrows():
+        # 1st row is rendered from delivery confirmation
+        if i_row == 0:
+            for col in df.columns:
+                setting_value = row[col]
+                if setting_value is not None and setting_value != "":
+                    mappings[col] = FromDeliveryConfirmation(
+                        target=col, column=setting_value
+                    )
+        # 2nd row is rendered hard-coded
+        elif i_row == 1:
+            for col in df.columns:
+                setting_value = row[col]
+                if setting_value is not None and setting_value != "":
+                    mappings[col] = HardcodedColumn(target=col, value=setting_value)
+        # 3rd row is rendered from original file
+        elif i_row == 2:
+            for col in df.columns:
+                setting_value = row[col]
+                if setting_value is not None and setting_value != "":
+                    mappings[col] = FromOriginalOrderFile(
+                        target=col, column=setting_value
+                    )
+    for col in df.columns:
+        if col not in mappings:
+            mappings[col] = FromOriginalOrderFile(target=col, column=col)
+
+    return _PlatformDeliveryReportSetting(
+        headers=pd.DataFrame(columns=df.columns), mappings=mappings
+    )
+
+
+_delivery_report_registry = {
+    'Naver': _PlatformDeliveryReportSetting(
+        headers=pd.DataFrame(
+            columns=['상품주문번호', '배송방법', '택배사', '송장번호', '이름', '주소']
+        ),
+        mappings={
+            '상품주문번호': FromOriginalOrderFile(
+                '상품주문번호', column='상품주문번호'
+            ),
+            '배송방법': HardcodedColumn('배송방법', value='택배'),
+            '택배사': HardcodedColumn('택배사', value='롯데택배'),
+            '송장번호': FromDeliveryConfirmation('송장번호', column='운송장번호'),
+            '이름': FromOriginalOrderFile('이름', column='수취인명'),
+            '주소': FromDeliveryConfirmation('주소', column='수하인기본주소'),
+        },
+    ),
+    'Gmarket': _PlatformDeliveryReportSetting(
+        headers=pd.DataFrame(
+            columns=['계정', '주문번호', '택배사', '송장번호', '수취인명'],
+        ),
+        mappings={
+            '계정': FromOriginalOrderFile(target='계정', column='판매아이디'),
+            '주문번호': FromOriginalOrderFile(target='주문번호', column='주문번호'),
+            '택배사': HardcodedColumn('택배사', value='롯데택배'),
+            '송장번호': FromDeliveryConfirmation('송장번호', column='운송장번호'),
+            '수취인명': FromOriginalOrderFile('이름', column='수령인명'),
+        },
+    ),
+    'Coupang': _load_excel_file_as_platform_report_setting(
+        '_resources/_default_coupang_delivery_report_form.xlsx'
+    )
+}
