@@ -13,10 +13,17 @@ from js import URL, File, Uint8Array
 from order_file_io import get_bytes_from_file, load_order_file
 from order_settings import (
     PlatformHeaderVariableMap,
+    VariableMappings,
     find_matching_variable_map,
     load_order_variables_from_local_storage,
 )
 from pyscript import document, when, window
+from split_delivery_settings import (
+    _delivery_report_registry,
+    load_delivery_info_keys_from_local_storage,
+    DeliveryInfoKeysRegistry,
+    DeliveryInfoKey,
+)
 
 _delivery_confirmation = {}
 
@@ -49,8 +56,7 @@ class ValidOrderFileSpec:
 
 
 @dataclass
-class DeliveryInforUpdatedFileSpec:
-    file_name: str
+class DeliveryInfoUpdatedFileSpec:
     platform: str
     data_frame: pd.DataFrame
 
@@ -87,22 +93,22 @@ def collect_valid_orders() -> dict[str, ValidOrderFileSpec]:
     }
 
 
-def _get_download_button_id(file_name: str) -> str:
-    return f"{file_name}-delivery-split-result-download-button"
+def _get_download_button_id(platform_name: str) -> str:
+    return f"{platform_name}-delivery-split-result-download-button"
 
 
 def _render_delivery_download_button(file_spec: ValidOrderFileSpec) -> str:
-    button_id = _get_download_button_id(file_spec.file_name)
+    button_id = _get_download_button_id(file_spec.variable_mapping.platform)
     return f'<button class="small-button" id="{button_id}">💾</button>'
 
 
-def _make_split_file_name(file_spec: DeliveryInforUpdatedFileSpec) -> str:
+def _make_split_file_name(file_spec: DeliveryInfoUpdatedFileSpec) -> str:
     today_as_str = pd.Timestamp.now().strftime("%Y-%m-%d")
     return f"{file_spec.platform}-delivered-{today_as_str}.xlsx"
 
 
 def _generate_download_event_handler(
-    file_spec: DeliveryInforUpdatedFileSpec,
+    file_spec: DeliveryInfoUpdatedFileSpec,
 ) -> Callable:
     def download_delivery_split(_):
         window.console.log("Downloading split files.")
@@ -129,103 +135,140 @@ def _generate_download_event_handler(
     return download_delivery_split
 
 
-def _remove_empty_space(msgs: list[str]) -> list[str]:
-    return [msg.strip() if isinstance(msg, str) else msg for msg in msgs]
+@dataclass
+class MatchedOrderDeliveryPair:
+    platform: str
+    original_order_row: pd.DataFrame | pd.Series
+    delivery_confirmation_row: pd.DataFrame | pd.Series | None
 
 
-def _are_matching_rows(delivery_row: pd.Series, order_row: pd.Series) -> bool:
-    name_column = "수하인명"
-    product_name_column = "상품명"
-    delivery_note_column = "특기사항"
-    must_match_cols = (
-        name_column,
-        product_name_column,
-        delivery_note_column,
-    )
-    window.console.log(delivery_row['특기사항'])
-    window.console.log(order_row.values)
+@dataclass
+class OrderDeliveryMatchingResults:
+    matched: dict[str, list[MatchedOrderDeliveryPair]]
+    cannot_be_matched: pd.DataFrame
+
+    @property
+    def file_specs(self) -> dict[str, DeliveryInfoUpdatedFileSpec]:
+        return {
+            platform: DeliveryInfoUpdatedFileSpec(
+                platform=platform,
+                data_frame=pd.concat(
+                    [
+                        report_setting.render(
+                            order_row=matched_pair.original_order_row,
+                            delivery_row=matched_pair.delivery_confirmation_row,
+                        )
+                        for matched_pair in matched_pairs
+                        #  ``render`` should always give same number of rows as ``original_order_row``
+                        # So that user can use the empty part to fill in.
+                    ]
+                ),
+            )
+            for platform, matched_pairs in self.matched.items()
+            if (report_setting := _delivery_report_registry.get(platform)) is not None
+        }
+
+
+@dataclass
+class _DeliveryInfoKeyPlatformVer(DeliveryInfoKey):
+    unified_variable_name: str
+    """Unified variable name. i.e. receipients_name"""
+    delivery_info_header: str
+    """Header of the delivery information. i.e. 수하인명"""
+    platform_header: str
+    """Header of the platform specific name. i.e. 수령인명"""
+
+
+def _match_orderrow_deliveryrow(
+    order_row: pd.Series,
+    delivery_row: pd.Series,
+    matching_keys: tuple[_DeliveryInfoKeyPlatformVer, ...],
+) -> bool:
     return all(
-        (delivery_row[col] == '')
-        or (delivery_row[col] in order_row.values)
-        or (
-            isinstance(delivery_row[col], str)
-            and (delivery_row[col].strip() in _remove_empty_space(order_row.values))
-        )
-        for col in must_match_cols
+        order_row[key.platform_header] == delivery_row[key.delivery_info_header]
+        or order_row[key.platform_header].strip()
+        == delivery_row[key.delivery_info_header].strip()
+        for key in matching_keys
     )
 
 
-def _find_tracking_code_column(df: pd.DataFrame) -> str:
-    for col in df.columns:
-        if '송장번호' in col:
-            return col
-    return '송장번호'
+def _find_matching_delivery_confirmation(
+    order_row: pd.DataFrame | pd.Series,
+    delivery_confirmation_df: pd.DataFrame,
+    matching_keys: tuple[_DeliveryInfoKeyPlatformVer, ...],
+) -> pd.Series | None:
+    matches = [
+        delivery_row
+        for _, delivery_row in delivery_confirmation_df.iterrows()
+        if _match_orderrow_deliveryrow(
+            order_row=order_row, delivery_row=delivery_row, matching_keys=matching_keys
+        )
+    ]
+    # Only return unique match
+    return next(iter(matches)) if len(matches) == 1 else None
 
 
-def insert_delivery_tracking_code(
+def _delivery_info_key_registry_to_platform_header_ver() -> (
+    dict[str, tuple[_DeliveryInfoKeyPlatformVer, ...]]
+):
+    registry = load_delivery_info_keys_from_local_storage()
+    unified_var_settings = load_order_variables_from_local_storage()
+    var_mappings = unified_var_settings.platform_header_variable_maps
+    return {
+        var_mapping.platform: tuple(
+            _DeliveryInfoKeyPlatformVer(
+                unified_variable_name=key.unified_variable_name,
+                delivery_info_header=key.delivery_info_header,
+                platform_header=var_mapping.variable_mapping[key.unified_variable_name],
+            )
+            for key in registry.keys
+        )
+        for var_mapping in var_mappings
+    }
+
+
+def split_delivery_info_per_platform(
     orders: dict[str, ValidOrderFileSpec],
     delivery_confirmation: DeliveryConfirmationFileSpec,
-) -> tuple[dict[str, DeliveryInforUpdatedFileSpec], pd.DataFrame]:
-    results = {
-        file_name: [pd.DataFrame(columns=file_spec.data_frame.columns)]
-        for file_name, file_spec in orders.items()
+) -> OrderDeliveryMatchingResults:
+    #  Load matching settings.
+    matching_keys = _delivery_info_key_registry_to_platform_header_ver()
+    #  Initialize the result.
+    matched: dict[str, list[MatchedOrderDeliveryPair]] = {
+        file_spec.variable_mapping.platform: [] for file_spec in orders.values()
     }
+
     delivery_df = delivery_confirmation.data_frame.copy(deep=True)
-    non_matched = []
-    duplicated = []
-    matches = {i_delivery_row: {} for i_delivery_row, _ in delivery_df.iterrows()}
-    for i_delivery_row, delivery_row in delivery_df.iterrows():
-        for file_name, order_file_spec in orders.items():
-            for _, order_row in order_file_spec.data_frame.iterrows():
-                if _are_matching_rows(delivery_row, order_row):
-                    matches[i_delivery_row].setdefault(file_name, []).append(order_row)
+    for order_file_spec in orders.values():
+        platform = order_file_spec.variable_mapping.platform
+        # Using platform from here since we do not have to keep file name
+        # For example, if there are 2 files for Naver, we can simply merge them.
+        for _, order_row in order_file_spec.data_frame.iterrows():
+            # We handle ``platform not in _delivery_report_registry`` here
+            # So that we skip the platform if there is no delivery report format.
+            unique_match = _find_matching_delivery_confirmation(
+                order_row, delivery_df, matching_keys[platform]
+            )
+            if (
+                unique_match is not None and platform in _delivery_report_registry
+            ):  # Matched!
+                # Remove matched row so that only cannot-be-matched rows are left
+                # And other rows can be matched faster
+                delivery_df.drop(unique_match.name, axis=0, inplace=True)
 
-    for i_delivery_row, delivery_row in delivery_df.iterrows():
-        matched_files = matches[i_delivery_row]
-        if not matched_files:
-            non_matched.append(delivery_row)
-        elif len(matched_files) > 2:
-            duplicated.append(delivery_row)
-        else:
-            matched_file_name = next(iter(matched_files))
-            matched_rows = matched_files[matched_file_name]
-            if len(matched_rows) > 1:
-                duplicated.append(delivery_row)
-            else:
-                matched_row = matched_rows[0]
-                inserted = matched_row.to_frame().T
-                tracking_code_col = _find_tracking_code_column(inserted)
-                inserted[tracking_code_col] = delivery_row["운송장번호"]
-                results[matched_file_name].append(inserted)
+            # Original order row should be appended no matter what
+            # so that the cannot-be-matched part can be manually inserted.
+            matched[platform].append(
+                MatchedOrderDeliveryPair(
+                    platform=platform,
+                    original_order_row=order_row,
+                    delivery_confirmation_row=unique_match
+                    if platform in _delivery_report_registry
+                    else None,
+                )
+            )
 
-    merged_result = {file_name: pd.concat(rows) for file_name, rows in results.items()}
-    left_over = pd.DataFrame(columns=delivery_confirmation.data_frame.columns)
-    if duplicated:
-        duplicated_dfs = [row.to_frame().T for row in duplicated]
-        merged_duplications = pd.concat(duplicated_dfs)
-        window.alert(
-            f"총 {len(duplicated)}개의 운송장 정보를 입력할 수 없었습니다: \n"
-            + ','.join(merged_duplications['운송장번호'])
-        )
-        left_over = pd.concat([left_over, merged_duplications])
-
-    if non_matched:
-        non_matched_dfs = [row.to_frame().T for row in non_matched]
-        non_matched_duplications = pd.concat(non_matched_dfs)
-        window.alert(
-            f"총 {len(non_matched)}개의 운송장 정보를 입력할 수 없었습니다: \n"
-            + ','.join(non_matched_duplications['운송장번호'])
-        )
-        left_over = pd.concat([left_over, non_matched_duplications])
-
-    return {
-        order_file_spec.file_name: DeliveryInforUpdatedFileSpec(
-            file_name=order_file_spec.file_name,
-            platform=order_file_spec.variable_mapping.platform,
-            data_frame=merged_result[file_name],
-        )
-        for file_name, order_file_spec in orders.items()
-    }, left_over.loc[:, (left_over != '').any()]
+    return OrderDeliveryMatchingResults(matched=matched, cannot_be_matched=delivery_df)
 
 
 def render_leftover_delivery_info(container, left_over_df: pd.DataFrame) -> None:
@@ -253,6 +296,8 @@ def refresh_delivery_split_result() -> None:
             download_button=_render_delivery_download_button(file_spec),
         )
         for file_name, file_spec in orders.items()
+        if file_spec.variable_mapping.platform in _delivery_report_registry
+        # Skip the impossible one
     ]
     clear_delivery_result_container()
     table = document.createElement('table')
@@ -261,16 +306,22 @@ def refresh_delivery_split_result() -> None:
     container = document.getElementById(_DELIVERY_SPLIT_RESULT_CONTAINER_ID)
     container.appendChild(table)
 
-    updated, left_over_df = insert_delivery_tracking_code(
+    matching_results = split_delivery_info_per_platform(
         orders=orders, delivery_confirmation=_delivery_confirmation["latest"]
     )
+    if len(matching_results.cannot_be_matched) > 0:
+        window.alert(
+            f"총 {len(matching_results.cannot_be_matched)}개의 운송장 정보를 입력할 수 없었습니다: \n"
+            + ','.join(matching_results.cannot_be_matched['운송장번호'])
+        )
+
     # Add event listener to the download button
-    for file_name, file_spec in updated.items():
-        button = document.getElementById(_get_download_button_id(file_name))
+    for platform, file_spec in matching_results.file_specs.items():
+        button = document.getElementById(_get_download_button_id(platform))
         when("click", button)(_generate_download_event_handler(file_spec))
 
     # Render left over ones if needed
-    render_leftover_delivery_info(container, left_over_df)
+    render_leftover_delivery_info(container, matching_results.cannot_be_matched)
 
 
 async def save_delivery_confirmation_file(file_obj) -> None:
