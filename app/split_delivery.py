@@ -149,25 +149,30 @@ class OrderDeliveryMatchingResults:
 
     @property
     def file_specs(self) -> dict[str, DeliveryInfoUpdatedFileSpec]:
-        return {
-            platform: DeliveryInfoUpdatedFileSpec(
-                platform=platform,
-                data_frame=pd.concat(
-                    [
+        file_specs = {}
+        for platform, matched_pairs in self.matched.items():
+            if (report_setting := _delivery_report_registry.get(platform)) is not None:
+                if len(matched_pairs) > 0:
+                    rendered = [
                         report_setting.render(
                             order_row=matched_pair.original_order_row,
                             delivery_row=matched_pair.delivery_confirmation_row,
                         )
                         for matched_pair in matched_pairs
-                        #  ``render`` should always give same number of rows as ``original_order_row``
-                        # So that user can use the empty part to fill in.
                     ]
-                ),
-            )
-            for platform, matched_pairs in self.matched.items()
-            if (report_setting := _delivery_report_registry.get(platform)) is not None
-            and len(matched_pairs) > 0
-        }
+                    data_frame = pd.concat(rendered)
+                else:  # If there is 0 orders.
+                    data_frame = pd.DataFrame(
+                        {col: [''] for col in report_setting.headers}
+                    )  # Leave empty row so that headers are rendered.
+                    # If it is completely empty, headers are not rendered in the file.
+
+                file_specs[platform] = DeliveryInfoUpdatedFileSpec(
+                    platform=platform, data_frame=data_frame
+                )
+            else:
+                ...  # Skip if report setting is not found.
+        return file_specs
 
 
 @dataclass
