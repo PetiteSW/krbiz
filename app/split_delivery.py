@@ -166,6 +166,7 @@ class OrderDeliveryMatchingResults:
             )
             for platform, matched_pairs in self.matched.items()
             if (report_setting := _delivery_report_registry.get(platform)) is not None
+            and len(matched_pairs) > 0
         }
 
 
@@ -317,8 +318,10 @@ def refresh_delivery_split_result() -> None:
 
     # Add event listener to the download button
     for platform, file_spec in matching_results.file_specs.items():
-        button = document.getElementById(_get_download_button_id(platform))
-        when("click", button)(_generate_download_event_handler(file_spec))
+        if platform in _delivery_report_registry:  # If possible
+            # TODO: Improve this logic to only include possible ones.
+            button = document.getElementById(_get_download_button_id(platform))
+            when("click", button)(_generate_download_event_handler(file_spec))
 
     # Render left over ones if needed
     render_leftover_delivery_info(container, matching_results.cannot_be_matched)
