@@ -216,6 +216,11 @@ class _PlatformDeliveryReportSetting:
     headers: pd.DataFrame  # pandas data frame that only has column names.
     # The order is very important.
     mappings: dict[str, DeliveryReportMapping]
+    export_sheet_name: str | None = None
+    """Sheet name is important for some platforms.
+
+    i.e. Naver requires the excel sheet name to be ``발송처리``.
+    """
 
     def render(
         self, order_row: pd.Series, delivery_row: pd.Series | None
@@ -281,7 +286,9 @@ def _load_excel_file_as_platform_report_setting(
             mappings[col] = FromOriginalOrderFile(target=col, column=col)
 
     return _PlatformDeliveryReportSetting(
-        headers=pd.DataFrame(columns=df.columns), mappings=mappings
+        headers=pd.DataFrame(columns=df.columns),
+        mappings=mappings,
+        # TODO: Pass the name of the sheet to ``export_sheet_name``
     )
 
 
@@ -300,6 +307,7 @@ _delivery_report_registry = {
             '이름': FromOriginalOrderFile('이름', column='수취인명'),
             '주소': FromDeliveryConfirmation('주소', column='수하인기본주소'),
         },
+        export_sheet_name="발송처리",
     ),
     'Gmarket': _PlatformDeliveryReportSetting(
         headers=pd.DataFrame(
@@ -315,5 +323,5 @@ _delivery_report_registry = {
     ),
     'Coupang': _load_excel_file_as_platform_report_setting(
         '_resources/_default_coupang_delivery_report_form.xlsx'
-    )
+    ),
 }

@@ -59,6 +59,7 @@ class ValidOrderFileSpec:
 class DeliveryInfoUpdatedFileSpec:
     platform: str
     data_frame: pd.DataFrame
+    export_sheet_name: str | None = None
 
 
 def clear_delivery_result_container() -> None:
@@ -114,7 +115,9 @@ def _generate_download_event_handler(
         window.console.log("Downloading split files.")
         # Download the split file.
         bytes = io.BytesIO()
-        export_excel(file_spec.data_frame, bytes)
+        export_excel(
+            file_spec.data_frame, bytes, export_sheet_name=file_spec.export_sheet_name
+        )
         bytes_buffer = bytes.getbuffer()
         js_array = Uint8Array.new(bytes_buffer.nbytes)
         js_array.assign(bytes_buffer)
@@ -168,7 +171,9 @@ class OrderDeliveryMatchingResults:
                     # If it is completely empty, headers are not rendered in the file.
 
                 file_specs[platform] = DeliveryInfoUpdatedFileSpec(
-                    platform=platform, data_frame=data_frame
+                    platform=platform,
+                    data_frame=data_frame,
+                    export_sheet_name=report_setting.export_sheet_name,
                 )
             else:
                 ...  # Skip if report setting is not found.
