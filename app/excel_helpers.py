@@ -15,12 +15,16 @@ def load_excel(
             message="Workbook contains no default style, apply openpyxl's default",
             category=UserWarning,
         )  # Filter warning about style.
-        return pd.read_excel(
-            file_path,
-            header=header_row,
-            dtype=str,
-            nrows=nrows,
-        ).dropna(how='all').fillna("")
+        return (
+            pd.read_excel(
+                file_path,
+                header=header_row,
+                dtype=str,
+                nrows=nrows,
+            )
+            .dropna(how='all')
+            .fillna("")
+        )
 
 
 def _adjust_column_width(sheet, ref_df: pd.DataFrame) -> None:
@@ -33,10 +37,14 @@ def _adjust_column_width(sheet, ref_df: pd.DataFrame) -> None:
 
 
 def export_excel(
-    df: pd.DataFrame, output_file_path: pathlib.Path | io.BytesIO, pretty: bool = True
+    df: pd.DataFrame,
+    output_file_path: pathlib.Path | io.BytesIO,
+    pretty: bool = True,
+    export_sheet_name: str | None = "Sheet1",
 ) -> None:
+    export_sheet_name = export_sheet_name or "Sheet1"
     with pd.ExcelWriter(output_file_path, engine="xlsxwriter") as writer:
-        df.to_excel(excel_writer=writer, index=False)
+        df.to_excel(excel_writer=writer, index=False, sheet_name=export_sheet_name)
         if pretty:
             for sheet in writer.sheets.values():
                 _adjust_column_width(sheet, df)

@@ -42,3 +42,6 @@ I have been doing this check manually before releasing.
 - [ ] Delivery Formatting
     - [ ] When ``tests/delivery-format-settings/missing-delivery-agency.xlsx`` is
           registered as a new delivery format, it should show an error and abort.
+
+- [ ] Delivery Splitting
+    - [ ] The excel sheet's sheet name and headers settings should be saved in the local storage.
