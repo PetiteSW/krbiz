@@ -24,7 +24,7 @@ DELIVERY_AGENCY_NAME_COLUMN_NAME = "DeliveryAgency"
 def _render_template(
     i_row: Hashable, row: pd.Series, templates: OrderedDict[str, Template]
 ) -> pd.DataFrame:
-    variables = {col: str(row[col]) for col in row.index}
+    variables = {col: str(row.get(col, '')) for col in row.index}
     return pd.DataFrame(
         {col: template.render(variables) for col, template in templates.items()},
         index=[i_row],

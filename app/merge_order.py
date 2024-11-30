@@ -124,7 +124,8 @@ def merge_orders() -> pd.DataFrame:
         except KeyError:  # noqa: PERF203
             # Skip the encrypted file with invalid password.
             ...
-    return pd.concat(dfs, ignore_index=True)
+    # Fill empty string for nan values.
+    return pd.concat(dfs, ignore_index=True).fillna('')
 
 
 def download_merged_orders(_):
